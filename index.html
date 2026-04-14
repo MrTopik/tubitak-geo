@@ -16,8 +16,33 @@
   </style>
 </head>
 <body>
-  <h1 style="text-align: center;">Coğrafya Bulmaca Oyunu</h1>
-    <div style="display: flex; justify-content: center;">     
+  <h1 style="text-align: center;">Coğrafya Bulmaca Oyunu - <span id="touch-test">a</span> </h1>
+    <script>
+        const userOs = document.querySelector(".os");
+        const testShow = document.getElementById('touch-test')
+
+        let touch = "No touch";
+
+        function getOS() {
+        const userAgent = window.navigator.userAgent;
+        const platform =
+            window.navigator?.userAgentData?.platform || window.navigator.platform;
+        const macosPlatforms = ["Macintosh", "MacIntel", "MacPPC", "Mac68K"];
+        const windowsPlatforms = ["Win32", "Win64", "Windows", "WinCE"];
+        const iosPlatforms = ["iPhone", "iPad", "iPod"];
+
+        if (iosPlatforms.indexOf(platform) !== -1 || /Android/.test(userAgent)) {
+            touch = "Touch";
+        }
+
+        return touch;
+        }
+
+        getOS();
+
+        testShow.innerHTML = getOS();
+    </script>
+    <div style="display: flex; justify-content: center;">
         <div class="frame-box">
             <iframe src="game.html" width="100%" height="100%" frameborder="0" sandbox="allow-same-origin allow-scripts"></iframe>
         </div>
