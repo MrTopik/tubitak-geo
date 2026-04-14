@@ -1,0 +1,522 @@
+import pygame
+import sys
+import random
+import math
+
+# ── Başlangıç ayarları ──────────────────────────────────────────────
+pygame.init()
+pygame.display.set_caption("Bilgi Yarışması – Monopoly Tarzı")
+
+W, H = 900, 700
+screen = pygame.display.set_mode((W, H))
+clock  = pygame.time.Clock()
+
+# ── Renkler ─────────────────────────────────────────────────────────
+CREAM      = (255, 248, 220)
+DARK_NAVY  = (15,  25,  55)
+GOLD       = (212, 175,  55)
+GOLD_LIGHT = (240, 210, 100)
+GREEN_DARK = (22,  90,  49)
+GREEN_MID  = (34, 139,  34)
+RED_ACCENT = (200,  50,  50)
+BLUE_SOFT  = ( 70, 130, 180)
+WHITE      = (255, 255, 255)
+SHADOW     = ( 30,  30,  60, 180)
+TEAL       = ( 32, 178, 170)
+
+# ── Fontlar ─────────────────────────────────────────────────────────
+def load_font(size, bold=False):
+    for name in ["Georgia", "Times New Roman", "DejaVu Serif", "serif"]:
+        try:
+            return pygame.font.SysFont(name, size, bold=bold)
+        except Exception:
+            pass
+    return pygame.font.Font(None, size)
+
+font_title  = load_font(38, bold=True)
+font_large  = load_font(28, bold=True)
+font_mid    = load_font(22)
+font_small  = load_font(18)
+font_tiny   = load_font(15)
+
+# ── Sorular ─────────────────────────────────────────────────────────
+QUESTIONS = [
+    {"q": "Türkiye'nin başkenti neresidir?",
+     "opts": ["İstanbul", "Ankara", "İzmir", "Bursa"], "ans": 1},
+    {"q": "Dünya'nın en büyük okyanusu hangisidir?",
+     "opts": ["Atlantik", "Hint", "Arktik", "Pasifik"], "ans": 3},
+    {"q": "Işık hızı yaklaşık kaç km/s'dir?",
+     "opts": ["150.000", "300.000", "450.000", "600.000"], "ans": 1},
+    {"q": "Hangisi bir Osmanlı padişahı değildir?",
+     "opts": ["Fatih Sultan Mehmet", "Kanuni Sultan Süleyman",
+              "Yavuz Sultan Selim", "Timur Han"], "ans": 3},
+    {"q": "DNA'nın açılımı nedir?",
+     "opts": ["Deoksiribonükleik Asit", "Dinükleik Asit",
+              "Dinamik Nükleik Asit", "Denitrik Asit"], "ans": 0},
+    {"q": "Mozart hangi ülkede doğmuştur?",
+     "opts": ["Almanya", "Fransa", "Avusturya", "İtalya"], "ans": 2},
+    {"q": "Güneş Sistemi'nde kaç gezegen vardır?",
+     "opts": ["7", "8", "9", "10"], "ans": 1},
+    {"q": "Hangisi kimyasal bir element değildir?",
+     "opts": ["Altın", "Gümüş", "Bronz", "Platin"], "ans": 2},
+    {"q": "Dünya'nın en yüksek dağı hangisidir?",
+     "opts": ["K2", "Everest", "Kangchenjunga", "Lhotse"], "ans": 1},
+    {"q": "İlk uçuşu gerçekleştiren kardeşler kimlerdir?",
+     "opts": ["Newton Kardeşler", "Wright Kardeşler",
+              "Curie Kardeşler", "Bell Kardeşler"], "ans": 1},
+    {"q": "Su'nun kimyasal formülü nedir?",
+     "opts": ["CO2", "H2O2", "H2O", "NaCl"], "ans": 2},
+    {"q": "Hangi ülke 2022 FIFA Dünya Kupası'nı kazandı?",
+     "opts": ["Fransa", "Brezilya", "Arjantin", "Almanya"], "ans": 2},
+    {"q": "Rönesans hareketi hangi ülkede başlamıştır?",
+     "opts": ["Fransa", "İngiltere", "İtalya", "İspanya"], "ans": 2},
+    {"q": "Pi sayısı yaklaşık kaçtır?",
+     "opts": ["2.71", "3.14", "1.61", "4.00"], "ans": 1},
+    {"q": "Hangisi bir programlama dili değildir?",
+     "opts": ["Python", "Java", "HTML", "C++"], "ans": 2},
+    {"q": "İnsan vücudunda kaç kemik bulunur?",
+     "opts": ["106", "206", "256", "306"], "ans": 1},
+    {"q": "Ay, Dünya'yı kaç günde döner?",
+     "opts": ["15", "22", "29.5", "45"], "ans": 2},
+    {"q": "Hangi element periyodik tabloda 'Au' simgesiyle gösterilir?",
+     "opts": ["Gümüş", "Alüminyum", "Altın", "Arsenik"], "ans": 2},
+    {"q": "Shakespeare'in ünlü eseri 'Hamlet' nerede geçmektedir?",
+     "opts": ["İngiltere", "Danimarka", "İtalya", "Fransa"], "ans": 1},
+    {"q": "Hangisi yenilenebilir bir enerji kaynağıdır?",
+     "opts": ["Kömür", "Doğalgaz", "Petrol", "Güneş"], "ans": 3},
+]
+
+# ── Tahta kareleri ───────────────────────────────────────────────────
+CELL_COLORS = [
+    (34, 139, 34),   # yeşil
+    (70, 130, 180),  # mavi
+    (212, 175, 55),  # altın
+    (200, 80, 80),   # kırmızı
+    (32, 178, 170),  # teal
+    (180, 100, 200), # mor
+]
+
+def build_board():
+    """Monopoly benzeri L-şekilli yol: alt → sağ → üst → sol → ortaya dön"""
+    cols, rows = 10, 7
+    cw = 60
+    margin_x = 30
+    margin_y = 60
+    cells = []
+
+    # Alt sıra: soldan sağa
+    for i in range(cols):
+        cells.append((margin_x + i * cw, margin_y + (rows - 1) * cw))
+    # Sağ sütun: aşağıdan yukarıya (köşe hariç)
+    for j in range(rows - 2, -1, -1):
+        cells.append((margin_x + (cols - 1) * cw, margin_y + j * cw))
+    # Üst sıra: sağdan sola (köşe hariç)
+    for i in range(cols - 2, -1, -1):
+        cells.append((margin_x + i * cw, margin_y))
+    # Sol sütun: yukarıdan aşağıya (köşe hariç)
+    for j in range(1, rows - 1):
+        cells.append((margin_x, margin_y + j * cw))
+
+    return cells, cw
+
+CELLS, CW = build_board()
+TOTAL = len(CELLS)
+
+# ── Yardımcı çizim fonksiyonları ─────────────────────────────────────
+def draw_rounded_rect(surf, color, rect, radius=10, border=0, border_color=None):
+    pygame.draw.rect(surf, color, rect, border_radius=radius)
+    if border and border_color:
+        pygame.draw.rect(surf, border_color, rect, border, border_radius=radius)
+
+def draw_text_centered(surf, text, font, color, cx, cy):
+    s = font.render(text, True, color)
+    surf.blit(s, (cx - s.get_width() // 2, cy - s.get_height() // 2))
+
+def draw_text_wrapped(surf, text, font, color, rect, line_spacing=4):
+    words = text.split()
+    lines, line = [], ""
+    for w in words:
+        test = (line + " " + w).strip()
+        if font.size(test)[0] <= rect.width:
+            line = test
+        else:
+            if line:
+                lines.append(line)
+            line = w
+    if line:
+        lines.append(line)
+    total_h = len(lines) * (font.get_height() + line_spacing)
+    y = rect.y + (rect.height - total_h) // 2
+    for ln in lines:
+        s = font.render(ln, True, color)
+        surf.blit(s, (rect.x + (rect.width - s.get_width()) // 2, y))
+        y += font.get_height() + line_spacing
+
+# ── Parıltı animasyonu ────────────────────────────────────────────────
+class Sparkle:
+    def __init__(self, x, y):
+        self.x = x + random.randint(-15, 15)
+        self.y = y + random.randint(-15, 15)
+        self.life = 1.0
+        self.speed = random.uniform(0.5, 1.5)
+        self.size = random.randint(3, 8)
+        self.color = random.choice([GOLD, GOLD_LIGHT, WHITE, TEAL])
+        self.dx = random.uniform(-1, 1)
+        self.dy = random.uniform(-2, -0.5)
+
+    def update(self, dt):
+        self.life -= dt * self.speed
+        self.x += self.dx
+        self.y += self.dy
+
+    def draw(self, surf):
+        if self.life > 0:
+            alpha = max(0, int(self.life * 255))
+            s = pygame.Surface((self.size * 2, self.size * 2), pygame.SRCALPHA)
+            pygame.draw.circle(s, (*self.color[:3], alpha), (self.size, self.size), self.size)
+            surf.blit(s, (int(self.x) - self.size, int(self.y) - self.size))
+
+# ── Panel arka planı ──────────────────────────────────────────────────
+def draw_panel(surf, rect, alpha=230):
+    s = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+    pygame.draw.rect(s, (15, 25, 55, alpha), (0, 0, rect.width, rect.height), border_radius=16)
+    pygame.draw.rect(s, (*GOLD, 200), (0, 0, rect.width, rect.height), 2, border_radius=16)
+    surf.blit(s, (rect.x, rect.y))
+
+# ── Ana Oyun Sınıfı ───────────────────────────────────────────────────
+class Game:
+    STATE_BOARD   = "board"
+    STATE_QUESTION= "question"
+    STATE_RESULT  = "result"
+    STATE_WIN     = "win"
+
+    def __init__(self):
+        self.pos      = 0
+        self.score    = 0
+        self.wrong    = 0
+        self.state    = self.STATE_BOARD
+        self.question = None
+        self.result_msg = ""
+        self.result_ok  = True
+        self.sparkles   = []
+        self.anim_t     = 0.0
+        self.player_anim= 0.0
+        self.used_qs    = []
+        self.input_text = ""
+        self.hover_opt  = -1
+        self.board_bg   = self._make_board_bg()
+
+    def _make_board_bg(self):
+        """Tahta arka planını bir kez oluştur."""
+        surf = pygame.Surface((W, H))
+        surf.fill(GREEN_DARK)
+
+        # Zemin doku çizgileri
+        for i in range(0, W, 40):
+            pygame.draw.line(surf, (20, 80, 44), (i, 0), (i, H), 1)
+        for j in range(0, H, 40):
+            pygame.draw.line(surf, (20, 80, 44), (0, j), (W, j), 1)
+
+        # Kareleri çiz
+        for idx, (cx, cy) in enumerate(CELLS):
+            color = CELL_COLORS[idx % len(CELL_COLORS)]
+            # Gölge
+            shadow = pygame.Surface((CW, CW), pygame.SRCALPHA)
+            pygame.draw.rect(shadow, (0, 0, 0, 80), (3, 3, CW - 2, CW - 2), border_radius=8)
+            surf.blit(shadow, (cx + 2, cy + 2))
+            # Kare
+            pygame.draw.rect(surf, color, (cx, cy, CW, CW), border_radius=8)
+            # İç çerçeve (açık)
+            light = tuple(min(255, c + 60) for c in color[:3])
+            pygame.draw.rect(surf, light, (cx + 2, cy + 2, CW - 4, CW - 4), 2, border_radius=7)
+            # Numara
+            n = font_tiny.render(str(idx + 1), True, WHITE)
+            surf.blit(n, (cx + 4, cy + 4))
+
+        # Başlangıç & Bitiş etiketi
+        sx, sy = CELLS[0]
+        pygame.draw.rect(surf, GOLD, (sx, sy, CW, CW), border_radius=8)
+        pygame.draw.rect(surf, WHITE, (sx + 2, sy + 2, CW - 4, CW - 4), 2, border_radius=7)
+        t = font_tiny.render("BAŞLA", True, DARK_NAVY)
+        surf.blit(t, (sx + (CW - t.get_width()) // 2, sy + (CW - t.get_height()) // 2))
+
+        ex, ey = CELLS[-1]
+        pygame.draw.rect(surf, RED_ACCENT, (ex, ey, CW, CW), border_radius=8)
+        t2 = font_tiny.render("BİTİŞ", True, WHITE)
+        surf.blit(t2, (ex + (CW - t2.get_width()) // 2, ey + (CW - t2.get_height()) // 2))
+
+        return surf
+
+    def pick_question(self):
+        available = [i for i in range(len(QUESTIONS)) if i not in self.used_qs]
+        if not available:
+            self.used_qs = []
+            available = list(range(len(QUESTIONS)))
+        idx = random.choice(available)
+        self.used_qs.append(idx)
+
+        # Orijinal soruyu kopyala
+        original = QUESTIONS[idx]
+        correct_text = original["opts"][original["ans"]]
+
+        # Şıkları karıştır
+        shuffled_opts = original["opts"][:]
+        random.shuffle(shuffled_opts)
+        new_ans = shuffled_opts.index(correct_text)
+
+        return {"q": original["q"], "opts": shuffled_opts, "ans": new_ans}
+
+    def start_question(self):
+        self.question  = self.pick_question()
+        self.state     = self.STATE_QUESTION
+        self.input_text = ""
+        self.hover_opt  = -1
+
+    def answer(self, opt_idx):
+        correct = self.question["ans"]
+        if opt_idx == correct:
+            self.result_ok  = True
+            self.result_msg = "🎉 Doğru! İlerliyorsunuz."
+            self.score += 10
+            self.pos = min(self.pos + 1, TOTAL - 1)
+            px, py = CELLS[self.pos]
+            for _ in range(18):
+                self.sparkles.append(Sparkle(px + CW // 2, py + CW // 2))
+        else:
+            self.result_ok  = False
+            correct_text    = self.question["opts"][correct]
+            self.result_msg = f"✗ Yanlış! Doğru: {correct_text}"
+            self.wrong += 1
+        self.state  = self.STATE_RESULT
+        self.anim_t = 0.0
+
+        if self.pos == TOTAL - 1:
+            self.state = self.STATE_WIN
+
+    def update(self, dt):
+        self.anim_t     += dt
+        self.player_anim = (self.player_anim + dt * 3) % (2 * math.pi)
+        self.sparkles = [sp for sp in self.sparkles if sp.life > 0]
+        for sp in self.sparkles:
+            sp.update(dt)
+
+    def draw_player(self, surf):
+        px, py = CELLS[self.pos]
+        cx = px + CW // 2
+        cy = py + CW // 2 - 3 + int(math.sin(self.player_anim) * 3)
+
+        # Gölge
+        shadow = pygame.Surface((36, 12), pygame.SRCALPHA)
+        pygame.draw.ellipse(shadow, (0, 0, 0, 80), (0, 0, 36, 12))
+        surf.blit(shadow, (cx - 18, py + CW - 10))
+
+        # Karakter: basit top + yıldız
+        pygame.draw.circle(surf, GOLD, (cx, cy), 16)
+        pygame.draw.circle(surf, GOLD_LIGHT, (cx, cy), 16, 2)
+        pygame.draw.circle(surf, DARK_NAVY, (cx, cy), 10)
+        t = font_tiny.render("★", True, GOLD)
+        surf.blit(t, (cx - t.get_width() // 2, cy - t.get_height() // 2))
+
+    def draw_hud(self, surf):
+        # Sağ panel (HUD)
+        panel_x = W - 210
+        draw_panel(surf, pygame.Rect(panel_x - 10, 10, 220, 220))
+
+        title = font_large.render("SKOR PANELİ", True, GOLD)
+        surf.blit(title, (panel_x, 22))
+
+        y = 62
+        for label, val, color in [
+            ("Pozisyon", f"{self.pos + 1} / {TOTAL}", WHITE),
+            ("Puan",     str(self.score),              GOLD_LIGHT),
+            ("Yanlış",   str(self.wrong),              RED_ACCENT),
+            ("Kalan",    str(TOTAL - 1 - self.pos),    TEAL),
+        ]:
+            lbl = font_small.render(label + ":", True, CREAM)
+            val_s = font_mid.render(val, True, color)
+            surf.blit(lbl, (panel_x, y))
+            surf.blit(val_s, (panel_x + 120, y - 1))
+            y += 36
+
+        # İlerleme çubuğu
+        bar_w = 190
+        bar_h = 14
+        bx, by = panel_x - 5, y + 10
+        pygame.draw.rect(surf, DARK_NAVY, (bx, by, bar_w, bar_h), border_radius=7)
+        fill = int((self.pos / (TOTAL - 1)) * bar_w)
+        if fill > 0:
+            pygame.draw.rect(surf, GOLD, (bx, by, fill, bar_h), border_radius=7)
+        pygame.draw.rect(surf, GOLD, (bx, by, bar_w, bar_h), 2, border_radius=7)
+
+        progress = font_tiny.render(f"%{int(self.pos / (TOTAL - 1) * 100)} tamamlandı", True, CREAM)
+        surf.blit(progress, (bx + (bar_w - progress.get_width()) // 2, by + 18))
+
+    def draw_board_state(self, surf):
+        surf.blit(self.board_bg, (0, 0))
+        for sp in self.sparkles:
+            sp.draw(surf)
+        self.draw_player(surf)
+        self.draw_hud(surf)
+
+        # Alt bilgi bandı
+        band = pygame.Surface((W, 52), pygame.SRCALPHA)
+        pygame.draw.rect(band, (10, 20, 50, 220), (0, 0, W, 52), border_radius=0)
+        surf.blit(band, (0, H - 52))
+        msg = font_mid.render("SORU ALMAK İÇİN  [SPACE]  tuşuna basın", True, GOLD)
+        surf.blit(msg, ((W - msg.get_width()) // 2, H - 52 + 15))
+
+    def draw_question_state(self, surf):
+        surf.blit(self.board_bg, (0, 0))
+        # Overlay
+        overlay = pygame.Surface((W, H), pygame.SRCALPHA)
+        overlay.fill((5, 10, 30, 190))
+        surf.blit(overlay, (0, 0))
+
+        q = self.question
+        panel = pygame.Rect(60, 60, W - 120, H - 120)
+        draw_panel(surf, panel, alpha=245)
+
+        # Başlık
+        draw_text_centered(surf, "❓ SORU SORUYORUM", font_large, GOLD, W // 2, 95)
+        pygame.draw.line(surf, GOLD, (100, 118), (W - 100, 118), 1)
+
+        # Soru metni
+        q_rect = pygame.Rect(90, 125, W - 180, 90)
+        draw_text_wrapped(surf, q["q"], font_mid, WHITE, q_rect)
+
+        # Seçenekler
+        opt_labels = ["A", "B", "C", "D"]
+        opt_colors  = [BLUE_SOFT, TEAL, (180, 100, 60), (130, 80, 180)]
+        start_y = 240
+        for i, (opt, label, col) in enumerate(zip(q["opts"], opt_labels, opt_colors)):
+            ry = start_y + i * 82
+            rect = pygame.Rect(90, ry, W - 180, 68)
+            is_hover = (i == self.hover_opt)
+            bg = tuple(min(255, c + 40) for c in col[:3]) if is_hover else col
+            draw_rounded_rect(surf, bg, rect, radius=12,
+                              border=3, border_color=WHITE if is_hover else GOLD)
+            # Harf balonu
+            pygame.draw.circle(surf, DARK_NAVY, (rect.x + 34, rect.y + 34), 22)
+            pygame.draw.circle(surf, WHITE, (rect.x + 34, rect.y + 34), 22, 2)
+            lbl_s = font_large.render(label, True, WHITE)
+            surf.blit(lbl_s, (rect.x + 34 - lbl_s.get_width() // 2,
+                               rect.y + 34 - lbl_s.get_height() // 2))
+            # Seçenek metni
+            opt_r = pygame.Rect(rect.x + 68, rect.y, rect.width - 72, rect.height)
+            draw_text_wrapped(surf, opt, font_mid, WHITE, opt_r)
+
+        hint = font_tiny.render("Fare ile bir seçeneğe tıklayın  •  Klavye: 1 2 3 4", True, CREAM)
+        surf.blit(hint, ((W - hint.get_width()) // 2, H - 75))
+
+    def get_option_rect(self, i):
+        start_y = 240
+        return pygame.Rect(90, start_y + i * 82, W - 180, 68)
+
+    def draw_result_state(self, surf):
+        surf.blit(self.board_bg, (0, 0))
+        for sp in self.sparkles:
+            sp.draw(surf)
+        self.draw_player(surf)
+
+        # Sonuç kutusu
+        alpha = min(1.0, self.anim_t * 3)
+        box = pygame.Surface((500, 160), pygame.SRCALPHA)
+        col = (20, 100, 40, int(220 * alpha)) if self.result_ok else (100, 20, 20, int(220 * alpha))
+        pygame.draw.rect(box, col, (0, 0, 500, 160), border_radius=18)
+        pygame.draw.rect(box, (*GOLD[:3], int(255 * alpha)), (0, 0, 500, 160), 3, border_radius=18)
+        surf.blit(box, (W // 2 - 250, H // 2 - 80))
+
+        c = GOLD_LIGHT if self.result_ok else (255, 120, 120)
+        draw_text_centered(surf, self.result_msg, font_large, c, W // 2, H // 2 - 20)
+        draw_text_centered(surf, "Devam için  [SPACE]  tuşuna basın",
+                           font_small, CREAM, W // 2, H // 2 + 30)
+
+    def draw_win_state(self, surf):
+        surf.blit(self.board_bg, (0, 0))
+        overlay = pygame.Surface((W, H), pygame.SRCALPHA)
+        overlay.fill((5, 5, 20, 210))
+        surf.blit(overlay, (0, 0))
+
+        t = abs(math.sin(self.anim_t * 2))
+        sz = int(44 + t * 8)
+        win_font = load_font(sz, bold=True)
+
+        draw_text_centered(surf, "🏆  TEBRİKLER!  🏆", win_font, GOLD, W // 2, H // 2 - 90)
+        draw_text_centered(surf, "Tüm kareleri tamamladınız!", font_large, WHITE, W // 2, H // 2 - 20)
+        draw_text_centered(surf, f"Toplam Puan: {self.score}", font_large, GOLD_LIGHT, W // 2, H // 2 + 30)
+        draw_text_centered(surf, f"Yanlış Cevap: {self.wrong}", font_mid, (255, 150, 150), W // 2, H // 2 + 72)
+        draw_text_centered(surf, "Yeniden oynamak için  [R]  tuşuna basın",
+                           font_mid, CREAM, W // 2, H // 2 + 130)
+
+        for sp in self.sparkles:
+            sp.draw(surf)
+        if random.random() < 0.25:
+            self.sparkles.append(Sparkle(
+                random.randint(100, W - 100),
+                random.randint(100, H - 200)
+            ))
+
+    def draw(self, surf):
+        if   self.state == self.STATE_BOARD:    self.draw_board_state(surf)
+        elif self.state == self.STATE_QUESTION: self.draw_question_state(surf)
+        elif self.state == self.STATE_RESULT:   self.draw_result_state(surf)
+        elif self.state == self.STATE_WIN:      self.draw_win_state(surf)
+
+    def reset(self):
+        self.__init__()
+
+# ── Ana döngü ────────────────────────────────────────────────────────
+def main():
+    game = Game()
+
+    while True:
+        dt = clock.tick(60) / 1000.0
+        mx, my = pygame.mouse.get_pos()
+
+        # Hover güncellemesi (soru ekranı)
+        if game.state == Game.STATE_QUESTION:
+            game.hover_opt = -1
+            for i in range(4):
+                if game.get_option_rect(i).collidepoint(mx, my):
+                    game.hover_opt = i
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit(); sys.exit()
+
+            if event.type == pygame.KEYDOWN:
+                if game.state == Game.STATE_BOARD:
+                    if event.key == pygame.K_SPACE:
+                        game.start_question()
+
+                elif game.state == Game.STATE_QUESTION:
+                    if event.key in (pygame.K_1, pygame.K_KP1): game.answer(0)
+                    if event.key in (pygame.K_2, pygame.K_KP2): game.answer(1)
+                    if event.key in (pygame.K_3, pygame.K_KP3): game.answer(2)
+                    if event.key in (pygame.K_4, pygame.K_KP4): game.answer(3)
+
+                elif game.state == Game.STATE_RESULT:
+                    if event.key == pygame.K_SPACE:
+                        game.state = Game.STATE_BOARD
+
+                elif game.state == Game.STATE_WIN:
+                    if event.key == pygame.K_r:
+                        game.reset()
+
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if game.state == Game.STATE_QUESTION:
+                    for i in range(4):
+                        if game.get_option_rect(i).collidepoint(mx, my):
+                            game.answer(i)
+                            break
+                elif game.state == Game.STATE_BOARD:
+                    # Alt banda tıklama da soruyu başlatır
+                    if my > H - 52:
+                        game.start_question()
+
+        game.update(dt)
+        game.draw(screen)
+        pygame.display.flip()
+
+if __name__ == "__main__":
+    main()
