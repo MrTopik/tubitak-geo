@@ -9,6 +9,27 @@
                 object-fit: contain;
             }
         </style>
+        <script>
+            window.addEventListener('message', (event) => {
+            if (event.data.keyboardSim) {
+                const { type, key, code } = event.data;
+                
+                // Create a real KeyboardEvent
+                const keyEvent = new KeyboardEvent(type, {
+                    key: key,
+                    code: code,
+                    keyCode: key.toUpperCase().charCodeAt(0), // Support for older Pygame versions
+                    which: key.toUpperCase().charCodeAt(0),
+                    bubbles: true,
+                    cancelable: true
+                });
+
+                // Dispatch to the window so Pygbag's event loop catches it
+                window.dispatchEvent(keyEvent);
+                document.dispatchEvent(keyEvent);
+                }
+            });
+        </script>
     </head>
 <script src="https://pygame-web.github.io/cdn/0.9.3/pythons.js" data-os="fs,gui" type=module id="__main__" async defer>#<!--
 
