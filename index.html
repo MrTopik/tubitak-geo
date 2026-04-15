@@ -1,215 +1,152 @@
 <!doctype html>
 <html>
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> <style>
-    body {
-        font-family: sans-serif;
-        background-color: #f4f4f4;
-        margin: 0;
-        padding: 10px;
-    }
-
-    /* style the box/window */
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Oyun</title>
+  <style>
+    body { font-family: sans-serif; background-color: #f4f4f4; margin: 0; padding: 10px; }
     .frame-box {
-      width: 100%;
-      max-width: 1000px;
-      height: 60vh; /* Responsive height */
-      min-height: 400px;
-      border: 4px solid #333;
-      border-radius: 8px;
-      overflow: hidden;
-      background: #000;
-      margin: 0 auto;
+      width: 100%; max-width: 2000px; height: 60vh; min-height: 500px;
+      border: 4px solid #333; border-radius: 8px; overflow: hidden;
+      background: #000; margin: 0 auto;
     }
-
-    /* --- SNES CONTROLLER STYLES --- */
     #touch-controls {
-      display: none; /* Hidden by default, shown by JS if touch is detected */
-      justify-content: space-between;
-      max-width: 800px;
-      margin: 30px auto;
-      padding: 0 20px;
-      user-select: none; /* Prevents text selection while mashing buttons */
+      display: none; justify-content: space-between;
+      max-width: 800px; margin: 20px auto; padding: 0 20px; user-select: none;
     }
-
-    /* D-Pad (Cross Layout using CSS Grid) */
     .d-pad {
-      display: grid;
-      grid-template-columns: 60px 60px 60px;
-      grid-template-rows: 60px 60px 60px;
-      gap: 4px;
+      display: grid; grid-template-columns: 60px 60px 60px;
+      grid-template-rows: 60px 60px 60px; gap: 4px;
     }
-
     .btn-dir {
-      background-color: #444;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      font-size: 24px;
-      touch-action: none; /* Prevents browser handling like scrolling */
+      background-color: #444; color: #fff; border: none;
+      border-radius: 8px; font-size: 24px; touch-action: none; cursor: pointer;
     }
     .btn-dir:active, .btn-dir.active-btn { background-color: #777; }
-
     .up    { grid-column: 2; grid-row: 1; border-radius: 8px 8px 0 0; }
     .left  { grid-column: 1; grid-row: 2; border-radius: 8px 0 0 8px; }
     .right { grid-column: 3; grid-row: 2; border-radius: 0 8px 8px 0; }
     .down  { grid-column: 2; grid-row: 3; border-radius: 0 0 8px 8px; }
-    .center-pad { grid-column: 2; grid-row: 2; background-color: #444; } /* Fills the middle of the D-pad */
-
-    /* Action Buttons (Diamond Layout using CSS Grid) */
+    .center-pad { grid-column: 2; grid-row: 2; background-color: #444; }
     .action-buttons {
-      display: grid;
-      grid-template-columns: 65px 65px 65px;
-      grid-template-rows: 65px 65px 65px;
-      gap: 5px;
+      display: grid; grid-template-columns: 65px 65px 65px;
+      grid-template-rows: 65px 65px 65px; gap: 5px;
     }
-
     .btn-action {
-      border: none;
-      border-radius: 50%;
-      font-size: 22px;
-      font-weight: bold;
-      color: #fff;
-      box-shadow: 0 6px 0 #222;
-      touch-action: none;
-      transition: transform 0.05s, box-shadow 0.05s;
+      border: none; border-radius: 50%; font-size: 22px; font-weight: bold;
+      color: #fff; box-shadow: 0 6px 0 #222; touch-action: none;
+      transition: transform 0.05s, box-shadow 0.05s; cursor: pointer;
     }
-    
     .btn-action:active, .btn-action.active-btn {
-      transform: translateY(6px);
-      box-shadow: 0 0px 0 #222;
+      transform: translateY(6px); box-shadow: 0 0px 0 #222;
     }
-
-    /* Super Famicom Colors */
-    .x { grid-column: 2; grid-row: 1; background-color: #007bff; } /* Blue */
-    .y { grid-column: 1; grid-row: 2; background-color: #28a745; } /* Green */
-    .a { grid-column: 3; grid-row: 2; background-color: #dc3545; } /* Red */
-    .b { grid-column: 2; grid-row: 3; background-color: #ffc107; color: #333;} /* Yellow */
-
+    .btn-spc { grid-column: 2; grid-row: 1; background-color: #007bff; font-size: 12px; }
+    .btn-1   { grid-column: 1; grid-row: 2; background-color: #28a745; }
+    .btn-2   { grid-column: 3; grid-row: 2; background-color: #dc3545; }
+    .btn-3   { grid-column: 2; grid-row: 3; background-color: #ffc107; color: #333; }
+    .btn-4   { grid-column: 2; grid-row: 2; background-color: #6f42c1; }
+    .hint-text { text-align: center; color: #555; font-size: 13px; margin-top: 8px; }
   </style>
-  <title>Oyun</title>
-  <script>
-    const keyMap = {
-    'up': ' ',      // Space (starts question)
-    'a': '1',       // Button 1
-    'b': '2',       // Button 2
-    'x': '3',       // Button 3
-    'y': '4',       // Button 4
-    'down': ' ',    // Also Space for convenience
-    'left': 'r',    // Reset key for win screen
-    'right': ' '
-    };
-
-    function simulateKey(buttonId, eventType) {
-        const key = keyMap[buttonId];
-        if (!key) return;
-
-        // Construct the event data
-        const eventData = {
-            type: eventType, // 'keydown' or 'keyup'
-            key: key,
-            code: key === ' ' ? 'Space' : `Digit${key}`,
-            keyboardSim: true
-        };
-
-        // Find your iframe and send the message
-        const gameFrame = document.querySelector('iframe');
-        gameFrame.contentWindow.postMessage(eventData, '*');
-    }
-  </script>
 </head>
 <body>
-  <h1 style="text-align: center;">Coğrafya Bulmaca Oyunu - <span id="touch-test">a</span> </h1>
-    <div style="display: flex; justify-content: center;">
-        <div class="frame-box">
-            <iframe src="game.html" width="100%" height="100%" frameborder="0" sandbox="allow-same-origin allow-scripts"></iframe>
-        </div>
-    </div> 
-    <div id="touch-controls">
-        <div class="d-pad">
-            <button class="btn-dir up control-btn" id="up">▲</button>
-            <button class="btn-dir left control-btn" id="left">◀</button>
-            <div class="center-pad"></div>
-            <button class="btn-dir right control-btn" id="right">▶</button>
-            <button class="btn-dir down control-btn" id="down">▼</button>
-        </div>
-        <div class="action-buttons">
-            <button class="btn-action x control-btn" id="x">X</button>
-            <button class="btn-action y control-btn" id="y">Y</button>
-            <button class="btn-action a control-btn" id="a">A</button>
-            <button class="btn-action b control-btn" id="b">B</button>
-        </div>
+  <h1 style="text-align:center;">Bilgi Yarışması Oyunu</h1>
+
+  <div class="frame-box">
+    <iframe id="game-frame" src="game.html" width="100%" height="100%"
+      frameborder="0" sandbox="allow-same-origin allow-scripts"></iframe>
+  </div>
+
+  <p class="hint-text" id="hint-desktop">
+    Klavye: <b>SPACE</b> = Soru al &nbsp;|&nbsp; <b>1 2 3 4</b> = Cevapla &nbsp;|&nbsp; <b>R</b> = Yeniden başlat
+  </p>
+
+  <div id="touch-controls">
+    <div class="d-pad">
+      <button class="btn-dir up   control-btn" id="key-space"  title="Soru / Devam">▲</button>
+      <button class="btn-dir left control-btn" id="key-r"      title="Yeniden başlat">R</button>
+      <div class="center-pad"></div>
+      <button class="btn-dir right control-btn" id="key-space2" title="Soru / Devam">▶</button>
+      <button class="btn-dir down  control-btn" id="key-space3" title="Devam">▼</button>
     </div>
-    <script>
-        const testShow = document.getElementById('touch-test');
-        const touchControls = document.getElementById('touch-controls');
-        let touch = "No touch";
 
-        // Enhanced Touch Detection
-        function getOS() {
-            const userAgent = window.navigator.userAgent;
-            const platform = window.navigator?.userAgentData?.platform || window.navigator.platform;
-            const iosPlatforms = ["iPhone", "iPad", "iPod"];
+    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;align-self:center;">
+      <div style="font-size:12px;color:#555;">Şıklar</div>
+      <div class="action-buttons">
+        <button class="btn-action btn-spc control-btn" id="key-space4" title="Soru / Devam">SPC</button>
+        <button class="btn-action btn-1   control-btn" id="key-1" title="Şık 1">1</button>
+        <button class="btn-action btn-4   control-btn" id="key-4" title="Şık 4">4</button>
+        <button class="btn-action btn-2   control-btn" id="key-2" title="Şık 2">2</button>
+        <button class="btn-action btn-3   control-btn" id="key-3" title="Şık 3">3</button>
+      </div>
+    </div>
+  </div>
 
-            // Check OS strings OR check if the browser actually supports touch events
-            if (iosPlatforms.indexOf(platform) !== -1 || /Android/.test(userAgent) || 'ontouchstart' in window || navigator.maxTouchPoints > 0) {
-                touch = "Touch";
-            }
-            return touch;
-        }
+  <script>
+    // Key mapping: button ID → KeyboardEvent fields
+    const keyMap = {
+      'key-space':  { key: ' ', code: 'Space'  },
+      'key-space2': { key: ' ', code: 'Space'  },
+      'key-space3': { key: ' ', code: 'Space'  },
+      'key-space4': { key: ' ', code: 'Space'  },
+      'key-r':      { key: 'r', code: 'KeyR'   },
+      'key-1':      { key: '1', code: 'Digit1' },
+      'key-2':      { key: '2', code: 'Digit2' },
+      'key-3':      { key: '3', code: 'Digit3' },
+      'key-4':      { key: '4', code: 'Digit4' },
+    };
 
-        testShow.innerHTML = getOS();
+    const frame = document.getElementById('game-frame');
 
-        // Show the controller if touch is detected
-        if (touch === "Touch") {
-            touchControls.style.display = "flex";
-        }
+    function sendKey(btnId, eventType) {
+      const m = keyMap[btnId];
+      if (!m) return;
+      // This matches exactly what game.html's message listener expects
+      frame.contentWindow.postMessage({
+        keyboardSim: true,
+        type: eventType,   // 'keydown' or 'keyup'
+        key: m.key,
+        code: m.code
+      }, '*');
+    }
 
-        // --- CONTROLLER LOGIC ---
-        const gameFrame = document.getElementById('game-frame');
-        const controlButtons = document.querySelectorAll('.control-btn');
+    // Show touch controls on touch-capable devices
+    const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+    if (isTouch) {
+      document.getElementById('touch-controls').style.display = 'flex';
+      document.getElementById('hint-desktop').style.display  = 'none';
+    }
 
-        // Function to send inputs to the iframe
-        function sendInputToGame(buttonId, state) {
-            // 'state' will be 'pressed' or 'released'
-            gameFrame.contentWindow.postMessage(
-                { button: buttonId, action: state }, 
-                '*' // Ideally, replace '*' with your actual domain for security
-            );
-        }
+    document.querySelectorAll('.control-btn').forEach(btn => {
+      const id = btn.id;
 
-        // Attach events to all 8 buttons
-        controlButtons.forEach(btn => {
-            
-            // Touch Events (For Mobile)
-            btn.addEventListener('touchstart', (e) => {
-                e.preventDefault(); // Stop double-tap zoom or scrolling
-                btn.classList.add('active-btn');
-                sendInputToGame(btn.id, 'pressed');
-            });
+      btn.addEventListener('touchstart', e => {
+        e.preventDefault();
+        btn.classList.add('active-btn');
+        sendKey(id, 'keydown');
+      }, { passive: false });
 
-            btn.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                btn.classList.remove('active-btn');
-                sendInputToGame(btn.id, 'released');
-            });
+      btn.addEventListener('touchend', e => {
+        e.preventDefault();
+        btn.classList.remove('active-btn');
+        sendKey(id, 'keyup');
+      }, { passive: false });
 
-            // Mouse Events (For testing the buttons on a Desktop PC)
-            btn.addEventListener('mousedown', () => {
-                btn.classList.add('active-btn');
-                sendInputToGame(btn.id, 'pressed');
-            });
+      btn.addEventListener('mousedown', () => {
+        btn.classList.add('active-btn');
+        sendKey(id, 'keydown');
+      });
 
-            btn.addEventListener('mouseup', () => {
-                btn.classList.remove('active-btn');
-                sendInputToGame(btn.id, 'released');
-            });
+      btn.addEventListener('mouseup', () => {
+        btn.classList.remove('active-btn');
+        sendKey(id, 'keyup');
+      });
 
-            btn.addEventListener('mouseleave', () => {
-                btn.classList.remove('active-btn');
-                sendInputToGame(btn.id, 'released');
-            });
-        });
-    </script>
+      btn.addEventListener('mouseleave', () => {
+        btn.classList.remove('active-btn');
+        sendKey(id, 'keyup');
+      });
+    });
+  </script>
 </body>
 </html>
