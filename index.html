@@ -7,7 +7,7 @@
   <style>
     body { font-family: sans-serif; background-color: #f4f4f4; margin: 0; padding: 10px; }
     .frame-box {
-      width: 100%; max-width: 2000px; height: 80vh; min-height: 500px;
+      width: 100%; max-width: 2000px; height: 100vh; min-height: 500px;
       border: 4px solid #333; border-radius: 8px; overflow: hidden;
       background: #000; margin: 0 auto;
     }
@@ -131,6 +131,17 @@
         btn.classList.remove('active-btn');
         sendKey(id, 'keyup');
       });
+    });
+    frame.addEventListener('load', () => {
+      setTimeout(() => {
+        frame.style.width = '99.9%';
+        requestAnimationFrame(() => {
+          frame.style.width = '100%';
+          try {
+            frame.contentWindow.dispatchEvent(new Event('resize'));
+          } catch(e) {}
+        });
+      }, 500);
     });
   </script>
 </body>
