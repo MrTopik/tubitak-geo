@@ -15,10 +15,6 @@
       display: none; justify-content: space-between;
       max-width: 800px; margin: 20px auto; padding: 0 20px; user-select: none;
     }
-    .d-pad {
-      display: grid; grid-template-columns: 60px 60px 60px;
-      grid-template-rows: 60px 60px 60px; gap: 4px;
-    }
     .btn-dir {
       background-color: #444; color: #fff; border: none;
       border-radius: 8px; font-size: 24px; touch-action: none; cursor: pointer;
@@ -62,17 +58,9 @@
   </p>
 
   <div id="touch-controls">
-    <div class="d-pad">
-      <button class="btn-dir up   control-btn" id="key-space"  title="Soru / Devam">▲</button>
-      <button class="btn-dir left control-btn" id="key-r"      title="Yeniden başlat">◀</button>
-      <div class="center-pad"></div>
-      <button class="btn-dir right control-btn" id="key-space2" title="Soru / Devam">▶</button>
-      <button class="btn-dir down  control-btn" id="key-space3" title="Devam">▼</button>
-    </div>
-
     <div style="display:flex;flex-direction:column;align-items:center;gap:6px;align-self:center;">
       <div style="font-size:12px;color:#555;">Şıklar</div>
-      <div class="action-buttons">
+      <div class="action-buttons" style="position: fixed; left: 0px; bottom: 0px;">
         <button class="btn-action btn-spc control-btn" id="key-space4" title="Soru / Devam">SPC</button>
         <button class="btn-action btn-1   control-btn" id="key-1" title="Şık 1">1</button>
         <button class="btn-action btn-4   control-btn" id="key-4" title="Şık 4">4</button>
@@ -85,9 +73,6 @@
   <script>
     // Key mapping: button ID → KeyboardEvent fields
     const keyMap = {
-      'key-space':  { key: ' ', code: 'Space'  },
-      'key-space2': { key: ' ', code: 'Space'  },
-      'key-space3': { key: ' ', code: 'Space'  },
       'key-space4': { key: ' ', code: 'Space'  },
       'key-r':      { key: 'r', code: 'KeyR'   },
       'key-1':      { key: '1', code: 'Digit1' },
