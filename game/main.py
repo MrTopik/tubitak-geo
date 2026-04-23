@@ -1,6 +1,7 @@
 import pygame
 import sys
 import random
+import math
 import asyncio
 
 pygame.init()
@@ -11,151 +12,255 @@ SIDEBAR_W = 320
 MAP_W, MAP_H = WIDTH - SIDEBAR_W, HEIGHT
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 
-BG_COLOR = (13, 17, 23)
+BG_COLOR    = (13, 17, 23)
 PANEL_COLOR = (22, 27, 34)
-GOLD = (201, 168, 76)
-GOLD_DIM = (122, 92, 30)
-TEAL = (42, 157, 143)
-TEAL_LIGHT = (78, 205, 196)
-CREAM = (240, 230, 211)
-RED = (192, 57, 43)
-GREEN = (39, 174, 96)
-MUTED = (139, 115, 85)
-WHITE = (255, 255, 255)
+GOLD        = (201, 168, 76)
+GOLD_DIM    = (122, 92, 30)
+TEAL        = (42, 157, 143)
+TEAL_LIGHT  = (78, 205, 196)
+CREAM       = (240, 230, 211)
+RED         = (192, 57, 43)
+GREEN       = (39, 174, 96)
+MUTED       = (139, 115, 85)
+WHITE       = (255, 255, 255)
+PURPLE      = (167, 139, 250)
+ORANGE      = (251, 146, 60)
 
 try:
-    font_large = pygame.font.SysFont("georgia", 32, bold=True)
-    font_medium = pygame.font.SysFont("georgia", 24)
-    font_small = pygame.font.SysFont("georgia", 18)
-    font_tiny = pygame.font.SysFont("georgia", 14)
+    font_large  = pygame.font.SysFont("georgia", 30, bold=True)
+    font_medium = pygame.font.SysFont("georgia", 22)
+    font_small  = pygame.font.SysFont("georgia", 17)
+    font_tiny   = pygame.font.SysFont("georgia", 13)
 except:
-    font_large = pygame.font.Font(None, 40)
-    font_medium = pygame.font.Font(None, 30)
-    font_small = pygame.font.Font(None, 24)
-    font_tiny = pygame.font.Font(None, 18)
+    font_large  = pygame.font.Font(None, 38)
+    font_medium = pygame.font.Font(None, 28)
+    font_small  = pygame.font.Font(None, 22)
+    font_tiny   = pygame.font.Font(None, 17)
 
 try:
     map_image = pygame.image.load("Images/TrHarita.jpg")
     map_image = pygame.transform.smoothscale(map_image, (MAP_W, MAP_H))
-except Exception as e:
+except:
     map_image = pygame.Surface((MAP_W, MAP_H))
     map_image.fill((30, 40, 40))
 
-ROUTE_NAMES = [
-    'İstanbul', 'Bursa', 'İzmir', 'Konya', 'Ankara',
-    'Kayseri', 'Nevşehir', 'Sivas', 'Trabzon', 'Erzurum',
-    'Van', 'Diyarbakır', 'Şanlıurfa', 'Gaziantep', 'Adana',
-    'Hatay', 'Malatya', 'Elazığ', 'Erzincan', 'Samsun'
-]
-
-ROUTE_COORDS = [
-    (130, 160),
-    (160, 210),
-    (80,  340),
-    (330, 410),
-    (350, 240),
-    (480, 360),
-    (430, 370),
-    (560, 260),
-    (670, 130),
-    (780, 210),
-    (850, 340),
-    (710, 440),
-    (630, 520),
-    (570, 530),
-    (470, 500),
-    (510, 580),
-    (600, 380),
-    (650, 350),
-    (690, 260),
-    (530, 140) 
-]
-
+# ── Alimler (4 scholars) ──────────────────────────────────────────────────────
 ALIMLER = [
-    { 'name': 'Mevlânâ Celâleddin Rûmî', 'color': (232, 168, 56) },
-    { 'name': 'Yunus Emre',               'color': (78, 205, 196) },
-    { 'name': 'Hacı Bektaş-ı Velî',       'color': (167, 139, 250) },
-    { 'name': 'Muhyiddin İbn Arabî',      'color': (251, 146, 60) },
-    { 'name': 'İmam-ı Gazâlî',            'color': (52, 211, 153) },
-    { 'name': 'Abdülkâdir-i Geylânî',     'color': (244, 114, 182) },
+    {'name': 'Akşemseddin',  'city': 'İstanbul',  'color': (251, 146, 60)},   # 0
+    {'name': 'Yunus Emre',   'city': 'Eskişehir', 'color': (78, 205, 196)},   # 1
+    {'name': 'Mevlânâ Rûmî', 'city': 'Konya',     'color': (232, 168, 56)},   # 2
+    {'name': 'Hacı Bektaş',  'city': 'Nevşehir',  'color': (167, 139, 250)},  # 3
 ]
 
+# ── Route: 4 cities, one per scholar ─────────────────────────────────────────
+ROUTE_NAMES  = ['İstanbul', 'Eskişehir', 'Konya', 'Nevşehir']
+ROUTE_COORDS = [
+    (130, 165),   # İstanbul
+    (230, 235),   # Eskişehir
+    (330, 415),   # Konya
+    (435, 375),   # Nevşehir
+]
+# Which scholar index corresponds to each stop
+ROUTE_ALIM   = [0, 1, 2, 3]
+
+# ── Questions ─────────────────────────────────────────────────────────────────
 QUESTIONS = [
-    { 'alim': 0, 'q': 'Mevlânâ\'nın "Mesnevi" adlı eseri kaç ciltten oluşmaktadır?', 'opts':['4','5','6','7'], 'ans':2 },
-    { 'alim': 0, 'q': 'Mevlânâ Celâleddin Rûmî hangi şehirde doğmuştur?', 'opts':['Konya','Buhara','Belh','Semerkant'], 'ans':2 },
-    { 'alim': 0, 'q': 'Mevlânâ\'nın semah dönerek yaptığı meditasyon ayinine ne ad verilir?', 'opts':['Sema','Zikir','Murakabe','Halvet'], 'ans':0 },
-    { 'alim': 0, 'q': 'Mevlânâ\'nın en yakın dostu ve mürşidi kimdir?', 'opts':['Ateşbaz-ı Veli','Sultan Veled','Şems-i Tebrizî','Burhaneddin Muhakkik'], 'ans':2 },
-    { 'alim': 0, 'q': 'Mevlânâ\'nın ölümüne verilen "Şeb-i Arûs" ne anlama gelir?', 'opts':['Hüzün Gecesi','Düğün Gecesi','Veda Gecesi','Kavuşma Gecesi'], 'ans':1 },
-    { 'alim': 1, 'q': '"İlim ilim bilmektir, ilim kendin bilmektir..." dizesi kime aittir?', 'opts':['Mevlânâ','Hacı Bektaş','Yunus Emre','Pir Sultan'], 'ans':2 },
-    { 'alim': 1, 'q': 'Yunus Emre hangi yüzyılda yaşamıştır?', 'opts':['12. yüzyıl','13-14. yüzyıl','15. yüzyıl','16. yüzyıl'], 'ans':1 },
-    { 'alim': 1, 'q': 'Yunus Emre\'nin şiirlerini topladığı eserin adı nedir?', 'opts':['Divan','Mesnevi','Risalet','Makalat'], 'ans':0 },
-    { 'alim': 1, 'q': 'Yunus Emre\'nin tasavvuf mürşidi kimdir?', 'opts':['Mevlânâ','Hacı Bektaş','Tapduk Emre','İbn Arabî'], 'ans':2 },
-    { 'alim': 1, 'q': '"Biz gelmedik dâvâ için, bizim işimiz sevi için" diyen şair kimdir?', 'opts':['Pir Sultan Abdal','Yunus Emre','Niyazi Mısrî','Kaygusuz Abdal'], 'ans':1 },
-    { 'alim': 2, 'q': 'Hacı Bektaş-ı Velî hangi ilde türbesi bulunur ve şehrin adıyla anılır?', 'opts':['Konya','Nevşehir','Kırşehir','Sivas'], 'ans':1 },
-    { 'alim': 2, 'q': 'Hacı Bektaş-ı Velî\'nin kurucusu olduğu kabul edilen tarikat hangisidir?', 'opts':['Nakşibendilik','Mevlevilik','Bektaşilik','Kadirilik'], 'ans':2 },
-    { 'alim': 2, 'q': 'Hacı Bektaş-ı Velî\'nin temel öğretisini özetleyen "Dört Kapı" nedir?', 'opts':['Şeriat-Tarikat-Marifet-Hakikat','İlim-Amel-Ahlak-İman','Zikir-Fikir-Şükür-Sabır','Namaz-Oruç-Hac-Zekat'], 'ans':0 },
-    { 'alim': 2, 'q': 'Hacı Bektaş Velî\'nin Anadolu\'ya geldiği yer neresidir?', 'opts':['Irak','İran','Horasan','Yemen'], 'ans':2 },
-    { 'alim': 3, 'q': 'Muhyiddin İbn Arabî\'nin "Fusûsu\'l-Hikem" eserinin Türkçe anlamı nedir?', 'opts':['Bilgeliklerin Özü','Kalplerin Dili','Aşkın Sırları','Hakikatin Aynası'], 'ans':0 },
-    { 'alim': 3, 'q': 'İbn Arabî\'nin "Vahdet-i Vücûd" öğretisi ne anlama gelir?', 'opts':['İki Varlık','Varlığın Birliği','Çoklukta Birlik','Tanrının Görünmezliği'], 'ans':1 },
-    { 'alim': 3, 'q': 'İbn Arabî hangi şehirde doğmuştur?', 'opts':['Bağdat','Kahire','Mürsiye','Şam'], 'ans':2 },
-    { 'alim': 3, 'q': 'İbn Arabî\'ye verilen en yaygın lakap hangisidir?', 'opts':['Sultanü\'l-Evliya','Şeyhü\'l-Ekber','Kutbü\'l-Arifin','İmamü\'l-Müfessirin'], 'ans':1 },
-    { 'alim': 4, 'q': 'İmam-ı Gazâlî\'nin en meşhur eseri "İhyâu Ulûmi\'d-Dîn"in anlamı nedir?', 'opts':['Din İlimlerinin Özü','Din İlimlerinin Yeniden Diriltilmesi','İslam\'ın Temelleri','Kalplerin İlacı'], 'ans':1 },
-    { 'alim': 4, 'q': 'Gazâlî hangi şehirde doğmuştur?', 'opts':['Bağdat','Nişabur','Tus','İsfahan'], 'ans':2 },
-    { 'alim': 4, 'q': 'Gazâlî\'nin filozoflara yönelik eleştiri kitabının adı nedir?', 'opts':['Tehâfütü\'l-Felâsife','Mişkâtü\'l-Envâr','Makâsıdü\'l-Felâsife','el-Munkız'], 'ans':0 },
-    { 'alim': 4, 'q': 'Gazâlî hangi tarikatın kurucusunun müridi sayılır?', 'opts':['Kadirilik','Nakşibendilik','Rufailik','Yeseviyye'], 'ans':3 },
-    { 'alim': 5, 'q': 'Abdülkâdir-i Geylânî\'nin kurduğu tarikat hangisidir?', 'opts':['Mevlevilik','Bektaşilik','Kadirilik','Halvetilik'], 'ans':2 },
-    { 'alim': 5, 'q': 'Geylânî hangi ülkede doğmuştur (bugünkü coğrafya)?', 'opts':['Türkiye','Irak','İran','Suriye'], 'ans':2 },
-    { 'alim': 5, 'q': 'Abdülkâdir-i Geylânî\'ye verilen "Gavs-ı Azam" lakabı ne anlama gelir?', 'opts':['En Büyük Kurtarıcı','Büyük Şeyh','Halkın Önderi','En Büyük Aşık'], 'ans':0 },
-    { 'alim': 5, 'q': 'Geylânî\'nin en önemli eserlerinden biri olan "el-Fethu\'r-Rabbânî" ne tür bir eserdir?', 'opts':['Şiir divanı','Vaaz ve sohbet mecmuası','Tefsir kitabı','Fıkıh kitabı'], 'ans':1 },
+    # Akşemseddin (alim 0)
+    {'alim': 0, 'q': 'Akşemseddin\'in gerçek adı nedir ve nerede doğmuştur?',
+     'opts': ['Şemseddin Muhammed – Şam', 'Ahmed Efendi – Bağdat', 'Mehmed Ali – Konya', 'Yusuf Sinan – Bursa'], 'ans': 0},
+    {'alim': 0, 'q': 'Akşemseddin hangi büyük alimin öğrencisidir?',
+     'opts': ['Mevlânâ Rûmî', 'Hacı Bayram-ı Velî', 'Yunus Emre', 'İbn Arabî'], 'ans': 1},
+    {'alim': 0, 'q': 'Akşemseddin ile Fatih Sultan Mehmet arasındaki ilişki nedir?',
+     'opts': ['Yakın arkadaşıdır', 'Fatih\'in manevi hocasıdır', 'Ordu komutanıdır', 'Sadrazamıdır'], 'ans': 1},
+    {'alim': 0, 'q': 'Akşemseddin\'in tıp alanındaki en önemli görüşü nedir?',
+     'opts': ['İlaçların bitkilerden yapılması', 'Hastalıkların mikrop yoluyla bulaştığını söylemesi',
+               'Cerrahinin önemine dikkat çekmesi', 'Beslenmeyle ilgili kurallar koyması'], 'ans': 1},
+    {'alim': 0, 'q': 'Akşemseddin hangi sahabenin kabrini bulmuştur?',
+     'opts': ['Hz. Ali', 'Hz. Ömer', 'Eyüp Sultan (Ebû Eyyûb el-Ensârî)', 'Hz. Hamza'], 'ans': 2},
+    {'alim': 0, 'q': 'Akşemseddin İstanbul\'un fethinde nasıl bir rol oynamıştır?',
+     'opts': ['Surları yıkmıştır', 'Orduya moral vermiş ve destek olmuştur',
+               'Teknik stratejileri belirlemiştir', 'Elçi olarak şehre girmiştir'], 'ans': 1},
+
+    # Yunus Emre (alim 1)
+    {'alim': 1, 'q': 'Yunus Emre hangi yüzyılda yaşamıştır?',
+     'opts': ['11.-12. yüzyıl', '13.-14. yüzyıl', '15.-16. yüzyıl', '17.-18. yüzyıl'], 'ans': 1},
+    {'alim': 1, 'q': 'Yunus Emre\'nin en önemli özelliği nedir?',
+     'opts': ['Arapça eserler yazması', 'Halk dilinde sade Türkçe ile şiir yazması',
+               'Medrese ilmiyle tanınması', 'Yalnızca dinî kitap yazması'], 'ans': 1},
+    {'alim': 1, 'q': 'Yunus Emre hangi alimin dergahında yetişmiştir?',
+     'opts': ['Mevlânâ Rûmî', 'Hacı Bektaş', 'Tapduk Emre', 'Akşemseddin'], 'ans': 2},
+    {'alim': 1, 'q': 'Yunus Emre\'nin şiirlerinde en çok işlediği konu nedir?',
+     'opts': ['Savaş ve kahramanlık', 'Sevgi, hoşgörü ve Allah aşkı', 'Fıkıh kuralları', 'Astronomi'], 'ans': 1},
+    {'alim': 1, 'q': 'Yunus Emre hangi edebi türde eser vermiştir?',
+     'opts': ['Destan', 'Masal', 'İlahi ve tasavvuf şiiri', 'Roman'], 'ans': 2},
+    {'alim': 1, 'q': 'Yunus Emre\'nin en bilinen eserlerinden biri hangisidir?',
+     'opts': ['Mesnevi', 'Risaletü\'n-Nushiyye', 'Fusûsu\'l-Hikem', 'İhya'], 'ans': 1},
+    {'alim': 1, 'q': 'Yunus Emre\'nin dili neden önemlidir?',
+     'opts': ['Farsçayı Türkçeleştirmiştir', 'Halkın anlayacağı sade Türkçe kullanmıştır',
+               'Osmanlıca icat etmiştir', 'Arapça kelimeleri toplamıştır'], 'ans': 1},
+    {'alim': 1, 'q': 'Yunus Emre\'nin tasavvuf anlayışında ne ön plana çıkar?',
+     'opts': ['Şiddet ve cihad', 'İnsan sevgisi ve hoşgörü', 'Yalnızlık ve inziva', 'Zenginlik ve güç'], 'ans': 1},
+    {'alim': 1, 'q': 'Yunus Emre\'ye göre insanın en önemli değeri nedir?',
+     'opts': ['İlim', 'Sevgi', 'Güç', 'Servet'], 'ans': 1},
+    {'alim': 1, 'q': 'Yunus Emre\'nin düşüncesinin temelinde ne vardır?',
+     'opts': ['Kurallar ve yasaklar', 'Allah\'a ulaşma ve gönül kazanma',
+               'Siyasi güç', 'Dünya malı'], 'ans': 1},
+
+    # Mevlânâ (alim 2)
+    {'alim': 2, 'q': 'Mevlânâ\'nın uzun süre yaşayıp etkisini yaydığı şehir hangisidir?',
+     'opts': ['Buhara', 'Şam', 'Konya', 'Bağdat'], 'ans': 2},
+    {'alim': 2, 'q': 'Mevlânâ\'nın en önemli eseri hangisidir?',
+     'opts': ['Divan-ı Kebir', 'Mesnevi', 'Fihi Ma Fih', 'Makalat'], 'ans': 1},
+    {'alim': 2, 'q': 'Mevlânâ\'nın düşünce sisteminin temelinde hangi kavram vardır?',
+     'opts': ['Güç', 'Sevgi', 'Bilgi', 'Korku'], 'ans': 1},
+    {'alim': 2, 'q': 'Mevlânâ\'nın hayatını değiştiren kişi kimdir?',
+     'opts': ['Hacı Bektaş', 'Sultan Veled', 'Şems-i Tebrîzî', 'Ateşbaz-ı Velî'], 'ans': 2},
+    {'alim': 2, 'q': 'Mevlevilikte yapılan dönme hareketine ne ad verilir?',
+     'opts': ['Zikir', 'Sema', 'Halvet', 'Murakabe'], 'ans': 1},
+    {'alim': 2, 'q': 'Sema neyi simgeler?',
+     'opts': ['Savaşa hazırlık', 'Evrenin düzeni ve insanın Allah\'a yönelişi',
+               'Yas ve matem', 'Neşe ve eğlence'], 'ans': 1},
+    {'alim': 2, 'q': 'Mevlânâ\'ya "Rûmî" denmesinin sebebi nedir?',
+     'opts': ['Roma\'da doğması', 'Anadolu\'da yaşaması', 'Rum asıllı olması', 'Rumca bilmesi'], 'ans': 1},
+    {'alim': 2, 'q': 'Mevlânâ\'nın ölümüne verdiği özel isim nedir?',
+     'opts': ['Şeb-i Arûs', 'Şeb-i Yeldâ', 'Şeb-i Mirac', 'Şeb-i Kadir'], 'ans': 0},
+
+    # Hacı Bektaş (alim 3) – kısa sorular
+    {'alim': 3, 'q': 'Hacı Bektaş-ı Velî\'nin kurucusu kabul edildiği tarikat hangisidir?',
+     'opts': ['Nakşibendilik', 'Mevlevilik', 'Bektaşilik', 'Kadirilik'], 'ans': 2},
+    {'alim': 3, 'q': 'Hacı Bektaş Velî Anadolu\'ya nereden gelmiştir?',
+     'opts': ['Irak', 'İran', 'Horasan', 'Yemen'], 'ans': 2},
+    {'alim': 3, 'q': '"Dört Kapı Kırk Makam" öğretisinde ilk kapı hangisidir?',
+     'opts': ['Tarikat', 'Marifet', 'Şeriat', 'Hakikat'], 'ans': 2},
+    {'alim': 3, 'q': 'Hacı Bektaş Velî\'nin türbesi hangi ilde bulunmaktadır?',
+     'opts': ['Konya', 'Nevşehir', 'Kırşehir', 'Sivas'], 'ans': 1},
 ]
 
+# ── Travel animation state ────────────────────────────────────────────────────
+class TravelAnim:
+    def __init__(self):
+        self.active  = False
+        self.t       = 0.0
+        self.speed   = 0.018
+        self.from_xy = (0, 0)
+        self.to_xy   = (0, 0)
+        self.trail   = []
+        self.stars   = []
+
+    def start(self, from_pos, to_pos):
+        self.active  = True
+        self.t       = 0.0
+        self.trail   = []
+        self.from_xy = (ROUTE_COORDS[from_pos][0] + SIDEBAR_W, ROUTE_COORDS[from_pos][1])
+        self.to_xy   = (ROUTE_COORDS[to_pos][0]   + SIDEBAR_W, ROUTE_COORDS[to_pos][1])
+        # spawn random stars around the path
+        self.stars = []
+        mx = (self.from_xy[0] + self.to_xy[0]) / 2
+        my = (self.from_xy[1] + self.to_xy[1]) / 2
+        for _ in range(20):
+            sx = mx + random.randint(-200, 200)
+            sy = my + random.randint(-150, 150)
+            self.stars.append([sx, sy, random.uniform(0, math.pi*2), random.uniform(2, 5)])
+
+    def update(self):
+        if not self.active:
+            return
+        self.t += self.speed
+        if self.t >= 1.0:
+            self.t = 1.0
+            self.active = False
+
+    def ease(self, t):
+        return t * t * (3 - 2 * t)   # smoothstep
+
+    def current_pos(self):
+        et = self.ease(self.t)
+        # arc: lift the path slightly upward
+        x = self.from_xy[0] + (self.to_xy[0] - self.from_xy[0]) * et
+        base_y = self.from_xy[1] + (self.to_xy[1] - self.from_xy[1]) * et
+        arc = -50 * math.sin(math.pi * et)
+        return (int(x), int(base_y + arc))
+
+    def draw(self, surface):
+        if not self.active:
+            return
+
+        # dotted trail
+        for tp in self.trail:
+            pygame.draw.circle(surface, (*GOLD, 80), tp, 2)
+
+        cx, cy = self.current_pos()
+        self.trail.append((cx, cy))
+        if len(self.trail) > 60:
+            self.trail.pop(0)
+
+        # glowing dot
+        for r, a in [(14, 40), (10, 80), (6, 160), (4, 255)]:
+            s = pygame.Surface((r*2, r*2), pygame.SRCALPHA)
+            pygame.draw.circle(s, (*GOLD, a), (r, r), r)
+            surface.blit(s, (cx - r, cy - r))
+
+        # twinkling stars
+        for star in self.stars:
+            star[2] += 0.12
+            bright = int((math.sin(star[2]) + 1) / 2 * 200 + 55)
+            s = pygame.Surface((int(star[3])*2+2, int(star[3])*2+2), pygame.SRCALPHA)
+            pygame.draw.circle(s, (255, 240, 180, bright), (int(star[3])+1, int(star[3])+1), int(star[3]))
+            surface.blit(s, (int(star[0]) - int(star[3]), int(star[1]) - int(star[3])))
+
+        # city name label near dot
+        label = font_tiny.render("✈ Yolculuk...", True, GOLD)
+        surface.blit(label, (cx + 12, cy - 10))
+
+
+# ── Game state ────────────────────────────────────────────────────────────────
 class GameState:
     def __init__(self):
-        self.pos = 0
-        self.score = 0
-        self.wrong = 0
-        self.used_q = []
-        self.current_q = None
-        self.phase = 'board'
+        self.pos            = 0       # current city index
+        self.score          = 0
+        self.wrong          = 0
+        self.used_q         = []
+        self.current_q      = None
+        self.phase          = 'board' # board | question | result | travel | win
         self.result_correct = False
-        self.particles = []
+        self.particles      = []
+        self.travel         = TravelAnim()
+        self.prev_pos       = 0
+        self.questions_in_city = 0    # questions answered correctly in current city
+        self.needed_to_advance = 2    # correct answers needed to move to next city
 
 state = GameState()
 
+# ── Helpers ───────────────────────────────────────────────────────────────────
 def draw_text(surface, text, font, color, x, y, align="left", max_width=None):
     if max_width:
         words = text.split(" ")
-        lines = []
-        cur_line = []
+        lines, cur = [], []
         for word in words:
-            cur_line.append(word)
-            fw, fh = font.size(" ".join(cur_line))
+            cur.append(word)
+            fw, _ = font.size(" ".join(cur))
             if fw > max_width:
-                cur_line.pop()
-                lines.append(" ".join(cur_line))
-                cur_line = [word]
-        if cur_line:
-            lines.append(" ".join(cur_line))
-        
-        y_offset = y
+                cur.pop()
+                lines.append(" ".join(cur))
+                cur = [word]
+        if cur:
+            lines.append(" ".join(cur))
+        y_off = y
         for line in lines:
             rendered = font.render(line, True, color)
             if align == "center":
-                rect = rendered.get_rect(center=(x, y_offset))
+                rect = rendered.get_rect(center=(x, y_off))
                 surface.blit(rendered, rect.topleft)
             else:
-                surface.blit(rendered, (x, y_offset))
-            y_offset += font.get_linesize()
-        return y_offset
+                surface.blit(rendered, (x, y_off))
+            y_off += font.get_linesize()
+        return y_off
     else:
         rendered = font.render(text, True, color)
         rect = rendered.get_rect()
-        if align == "center":
-            rect.center = (x, y)
-        elif align == "right":
-            rect.topright = (x, y)
-        else:
-            rect.topleft = (x, y)
+        if align == "center":   rect.center   = (x, y)
+        elif align == "right":  rect.topright = (x, y)
+        else:                   rect.topleft  = (x, y)
         surface.blit(rendered, rect.topleft)
         return y + font.get_linesize()
 
@@ -163,80 +268,86 @@ def draw_rounded_rect(surface, color, rect, radius=10, width=0):
     pygame.draw.rect(surface, color, rect, width=width, border_radius=radius)
 
 def spawn_particles():
-    colors = [GOLD, YELLOW := (232, 204, 122), TEAL_LIGHT, WHITE]
-    for _ in range(30):
+    colors = [GOLD, (232, 204, 122), TEAL_LIGHT, WHITE, ORANGE]
+    for _ in range(40):
         px = random.randint(WIDTH//2 - 200, WIDTH//2 + 200)
         py = random.randint(HEIGHT//2 - 100, HEIGHT//2 + 100)
-        vx = random.uniform(-4, 4)
-        vy = random.uniform(-6, -2)
-        c = random.choice(colors)
+        vx = random.uniform(-5, 5)
+        vy = random.uniform(-8, -2)
+        c  = random.choice(colors)
         state.particles.append([px, py, vx, vy, 1.0, c])
 
 def update_particles():
     for p in state.particles:
-        p[0] += p[2]
-        p[1] += p[3]
-        p[2] *= 0.98
-        p[3] += 0.2
-        p[4] -= 0.02
+        p[0] += p[2]; p[1] += p[3]
+        p[2] *= 0.97; p[3] += 0.22
+        p[4] -= 0.018
     state.particles = [p for p in state.particles if p[4] > 0]
 
 def draw_particles():
     for p in state.particles:
         alpha = int(p[4] * 255)
-        if alpha > 0:
-            surf = pygame.Surface((6, 6), pygame.SRCALPHA)
-            pygame.draw.circle(surf, p[5] + (alpha,), (3, 3), 3)
-            screen.blit(surf, (int(p[0]), int(p[1])))
+        if alpha <= 0: continue
+        surf = pygame.Surface((8, 8), pygame.SRCALPHA)
+        pygame.draw.circle(surf, p[5] + (alpha,), (4, 4), 4)
+        screen.blit(surf, (int(p[0]), int(p[1])))
 
+# ── Question logic ────────────────────────────────────────────────────────────
 def start_question():
     if state.phase != 'board':
         return
-    
-    available = [i for i in range(len(QUESTIONS)) if i not in state.used_q]
-    if not available:
-        available = list(range(len(QUESTIONS)))
-        state.used_q = []
-    
-    q_idx = random.choice(available)
+    alim_idx = ROUTE_ALIM[state.pos]
+    pool = [i for i in range(len(QUESTIONS))
+            if QUESTIONS[i]['alim'] == alim_idx and i not in state.used_q]
+    if not pool:
+        # reset used for this alim
+        state.used_q = [i for i in state.used_q
+                        if QUESTIONS[i]['alim'] != alim_idx]
+        pool = [i for i in range(len(QUESTIONS)) if QUESTIONS[i]['alim'] == alim_idx]
+
+    q_idx  = random.choice(pool)
     state.used_q.append(q_idx)
-    
-    orig = QUESTIONS[q_idx]
-    correct_text = orig['opts'][orig['ans']]
-    
-    shuffled_opts = orig['opts'].copy()
+    orig   = QUESTIONS[q_idx]
+    correct_text   = orig['opts'][orig['ans']]
+    shuffled_opts  = orig['opts'].copy()
     random.shuffle(shuffled_opts)
-    new_ans = shuffled_opts.index(correct_text)
-    
     state.current_q = {
         'alim': orig['alim'],
-        'q': orig['q'],
+        'q':    orig['q'],
         'opts': shuffled_opts,
-        'ans': new_ans
+        'ans':  shuffled_opts.index(correct_text)
     }
     state.phase = 'question'
 
 def answer_question(idx):
     if state.phase != 'question':
         return
-    q = state.current_q
+    q          = state.current_q
     is_correct = (idx == q['ans'])
-    
     state.result_correct = is_correct
     if is_correct:
         state.score += 10
-        state.pos = min(state.pos + 1, len(ROUTE_NAMES) - 1)
+        state.questions_in_city += 1
         spawn_particles()
     else:
         state.wrong += 1
-        
     state.phase = 'result'
 
 def close_result():
     if state.phase != 'result':
         return
-    if state.pos == len(ROUTE_NAMES) - 1 and state.result_correct:
-        state.phase = 'win'
+    # Check if we should advance city
+    if state.result_correct and state.questions_in_city >= state.needed_to_advance:
+        next_pos = state.pos + 1
+        if next_pos >= len(ROUTE_NAMES):
+            state.phase = 'win'
+        else:
+            # Start travel animation
+            state.prev_pos = state.pos
+            state.pos      = next_pos
+            state.questions_in_city = 0
+            state.travel.start(state.prev_pos, state.pos)
+            state.phase = 'travel'
     else:
         state.phase = 'board'
 
@@ -244,178 +355,282 @@ def restart_game():
     global state
     state = GameState()
 
+# ── Drawing ───────────────────────────────────────────────────────────────────
 def draw_board():
     screen.blit(map_image, (SIDEBAR_W, 0))
-    
     overlay = pygame.Surface((MAP_W, MAP_H), pygame.SRCALPHA)
-    overlay.fill((0, 0, 0, 70))
+    overlay.fill((0, 0, 0, 60))
     screen.blit(overlay, (SIDEBAR_W, 0))
 
-    for i, (cx, cy) in enumerate(ROUTE_COORDS):
-        if i == state.pos:
-            cx += SIDEBAR_W
-            pygame.draw.circle(screen, (78, 205, 196, 100), (cx, cy), 18)
-            pygame.draw.circle(screen, TEAL_LIGHT, (cx, cy), 10)
-            pygame.draw.circle(screen, WHITE, (cx, cy), 5)
-            draw_text(screen, f"📍 {ROUTE_NAMES[i]}", font_small, WHITE, cx, cy - 25, align="center")
+    # Draw lines between city dots
+    for i in range(len(ROUTE_COORDS) - 1):
+        x1, y1 = ROUTE_COORDS[i][0] + SIDEBAR_W, ROUTE_COORDS[i][1]
+        x2, y2 = ROUTE_COORDS[i+1][0] + SIDEBAR_W, ROUTE_COORDS[i+1][1]
+        pygame.draw.line(screen, GOLD_DIM, (x1, y1), (x2, y2), 1)
 
+    # Draw city dots
+    for i, (cx, cy) in enumerate(ROUTE_COORDS):
+        cx += SIDEBAR_W
+        alim = ALIMLER[ROUTE_ALIM[i]]
+        color = alim['color']
+
+        if i == state.pos:
+            # pulsing ring
+            t = pygame.time.get_ticks() / 400
+            r = 16 + int(4 * abs(math.sin(t)))
+            pygame.draw.circle(screen, (*color, 80), (cx, cy), r)
+            pygame.draw.circle(screen, color, (cx, cy), 11)
+            pygame.draw.circle(screen, WHITE, (cx, cy), 5)
+        elif i < state.pos:
+            # visited
+            pygame.draw.circle(screen, color, (cx, cy), 8)
+            pygame.draw.circle(screen, WHITE, (cx, cy), 3)
+        else:
+            # future
+            pygame.draw.circle(screen, (60, 70, 80), (cx, cy), 8)
+            pygame.draw.circle(screen, (100, 110, 120), (cx, cy), 8, 2)
+
+        name_surf = font_tiny.render(ROUTE_NAMES[i], True, WHITE if i == state.pos else MUTED)
+        screen.blit(name_surf, (cx - name_surf.get_width()//2, cy - 22))
+
+    # Sidebar
     pygame.draw.rect(screen, PANEL_COLOR, (0, 0, SIDEBAR_W, HEIGHT))
     pygame.draw.line(screen, GOLD_DIM, (SIDEBAR_W-1, 0), (SIDEBAR_W-1, HEIGHT), 2)
-    
-    draw_text(screen, "🕌 Tasavvuf Ehli Bilgi", font_medium, GOLD, SIDEBAR_W//2, 30, align="center")
-    draw_text(screen, "Türkiye'nin Şehirleri", font_small, MUTED, SIDEBAR_W//2, 60, align="center")
-    pygame.draw.line(screen, GOLD_DIM, (20, 90), (SIDEBAR_W-20, 90), 1)
-    
-    py = 110
+
+    draw_text(screen, "🕌 Tasavvuf Ehli Bilgi", font_medium, GOLD, SIDEBAR_W//2, 28, align="center")
+    draw_text(screen, "Türkiye'nin Şehirleri", font_small, MUTED, SIDEBAR_W//2, 56, align="center")
+    pygame.draw.line(screen, GOLD_DIM, (20, 84), (SIDEBAR_W-20, 84), 1)
+
+    py = 98
     draw_text(screen, "✦ İlerleme ✦", font_small, GOLD, SIDEBAR_W//2, py, align="center")
-    py += 35
-    
-    current_city = ROUTE_NAMES[state.pos]
-    
-    draw_text(screen, "Şehir:", font_small, MUTED, 30, py)
-    draw_text(screen, current_city, font_medium, TEAL_LIGHT, SIDEBAR_W-30, py, align="right")
-    py += 35
-    draw_text(screen, "İlerleme:", font_small, MUTED, 30, py)
-    draw_text(screen, f"{state.pos} / {len(ROUTE_NAMES)}", font_medium, CREAM, SIDEBAR_W-30, py, align="right")
-    py += 35
-    draw_text(screen, "Puan:", font_small, MUTED, 30, py)
-    draw_text(screen, str(state.score), font_medium, GOLD, SIDEBAR_W-30, py, align="right")
-    py += 35
-    draw_text(screen, "Yanlış:", font_small, MUTED, 30, py)
-    draw_text(screen, str(state.wrong), font_medium, RED, SIDEBAR_W-30, py, align="right")
-    py += 40
-    
-    bar_rect = pygame.Rect(30, py, SIDEBAR_W - 60, 10)
-    draw_rounded_rect(screen, (30, 40, 50), bar_rect, 5)
-    fill_w = int((state.pos / len(ROUTE_NAMES)) * (SIDEBAR_W - 60))
-    if fill_w > 0:
-        fill_rect = pygame.Rect(30, py, fill_w, 10)
-        draw_rounded_rect(screen, GOLD, fill_rect, 5)
-    
-    py += 50
-    draw_text(screen, "📿 Büyük Alimler", font_small, GOLD, SIDEBAR_W//2, py, align="center")
+    py += 32
+
+    current_alim = ALIMLER[ROUTE_ALIM[state.pos]]
+    draw_text(screen, "Alim:", font_small, MUTED, 30, py)
+    draw_text(screen, current_alim['name'], font_small, current_alim['color'], SIDEBAR_W-20, py, align="right")
     py += 30
-    
-    for i, alim in enumerate(ALIMLER):
-        is_active = (state.phase == 'question' and state.current_q and state.current_q['alim'] == i)
-        bg = (40, 50, 60) if is_active else (25, 30, 40)
-        draw_rounded_rect(screen, bg, (20, py, SIDEBAR_W - 40, 30), 5)
-        if is_active:
-            draw_rounded_rect(screen, GOLD_DIM, (20, py, SIDEBAR_W - 40, 30), 5, 1)
-        
-        pygame.draw.circle(screen, alim['color'], (35, py + 15), 5)
-        draw_text(screen, alim['name'], font_tiny, alim['color'], 45, py + 7)
-        py += 35
-    
-    py = HEIGHT - 70
-    draw_text(screen, "Soru Almak için BOŞLUK (SPACE) tuşuna bas", font_tiny, MUTED, SIDEBAR_W//2, py, align="center")
+    draw_text(screen, "Şehir:", font_small, MUTED, 30, py)
+    draw_text(screen, ROUTE_NAMES[state.pos], font_medium, TEAL_LIGHT, SIDEBAR_W-20, py, align="right")
+    py += 32
+    draw_text(screen, "Puan:", font_small, MUTED, 30, py)
+    draw_text(screen, str(state.score), font_medium, GOLD, SIDEBAR_W-20, py, align="right")
+    py += 30
+    draw_text(screen, "Yanlış:", font_small, MUTED, 30, py)
+    draw_text(screen, str(state.wrong), font_medium, RED, SIDEBAR_W-20, py, align="right")
+    py += 30
+
+    # mini progress toward next city
+    draw_text(screen, f"Sonraki Şehir İçin: {state.questions_in_city}/{state.needed_to_advance}", font_tiny, MUTED, 30, py)
+    py += 20
+    bar_rect  = pygame.Rect(30, py, SIDEBAR_W-60, 8)
+    draw_rounded_rect(screen, (30, 40, 50), bar_rect, 4)
+    fill_w = int((state.questions_in_city / state.needed_to_advance) * (SIDEBAR_W-60))
+    if fill_w > 0:
+        draw_rounded_rect(screen, TEAL, pygame.Rect(30, py, min(fill_w, SIDEBAR_W-60), 8), 4)
+    py += 24
+
+    # overall progress bar
+    draw_text(screen, "Genel İlerleme:", font_tiny, MUTED, 30, py)
+    py += 18
+    bar_rect2  = pygame.Rect(30, py, SIDEBAR_W-60, 8)
+    draw_rounded_rect(screen, (30, 40, 50), bar_rect2, 4)
+    fill_w2 = int((state.pos / (len(ROUTE_NAMES)-1)) * (SIDEBAR_W-60)) if len(ROUTE_NAMES) > 1 else 0
+    if fill_w2 > 0:
+        draw_rounded_rect(screen, GOLD, pygame.Rect(30, py, fill_w2, 8), 4)
+    py += 28
+
+    pygame.draw.line(screen, GOLD_DIM, (20, py), (SIDEBAR_W-20, py), 1)
+    py += 14
+
+    draw_text(screen, "📿 Yolculuk Haritası", font_small, GOLD, SIDEBAR_W//2, py, align="center")
+    py += 26
+
+    for i, (rname, alim_i) in enumerate(zip(ROUTE_NAMES, ROUTE_ALIM)):
+        alim = ALIMLER[alim_i]
+        bg   = (35, 48, 58) if i == state.pos else (22, 27, 34)
+        draw_rounded_rect(screen, bg, (18, py, SIDEBAR_W-36, 34), 6)
+        if i == state.pos:
+            draw_rounded_rect(screen, alim['color'], (18, py, SIDEBAR_W-36, 34), 6, 1)
+        elif i < state.pos:
+            draw_rounded_rect(screen, (60, 80, 60), (18, py, SIDEBAR_W-36, 34), 6, 1)
+
+        pygame.draw.circle(screen, alim['color'], (32, py+17), 5)
+        draw_text(screen, f"{rname} – {alim['name']}", font_tiny,
+                  alim['color'] if i == state.pos else (CREAM if i < state.pos else MUTED),
+                  42, py + 9)
+        py += 40
+
+    py = HEIGHT - 56
+    pygame.draw.line(screen, GOLD_DIM, (20, py-8), (SIDEBAR_W-20, py-8), 1)
+    draw_text(screen, "Soru için BOŞLUK (SPACE)", font_tiny, MUTED, SIDEBAR_W//2, py, align="center")
+    draw_text(screen, "Cevap: 1 · 2 · 3 · 4", font_tiny, MUTED, SIDEBAR_W//2, py+18, align="center")
 
 def draw_overlay_bg():
     overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
-    overlay.fill((5, 8, 20, 220))
+    overlay.fill((5, 8, 20, 210))
     screen.blit(overlay, (0, 0))
 
 def draw_question():
     draw_overlay_bg()
-    q = state.current_q
+    q    = state.current_q
     alim = ALIMLER[q['alim']]
-    
-    modal_w = 700
-    modal_h = 400
+
+    modal_w, modal_h = 720, 420
     mx = (WIDTH - modal_w) // 2
     my = (HEIGHT - modal_h) // 2
-    
+
     modal_rect = pygame.Rect(mx, my, modal_w, modal_h)
     draw_rounded_rect(screen, PANEL_COLOR, modal_rect, 20)
-    draw_rounded_rect(screen, GOLD, modal_rect, 20, 2)
-    
-    draw_text(screen, "✦ " + alim['name'].upper() + " ✦", font_small, alim['color'], WIDTH//2, my + 30, align="center")
-    
-    draw_text(screen, q['q'], font_large, CREAM, WIDTH//2, my + 80, align="center", max_width=600)
-    
-    labels = ['1', '2', '3', '4']
-    opt_w = 300
-    opt_h = 50
-    start_x = mx + 40
-    start_y = my + 200
-    
+    draw_rounded_rect(screen, alim['color'], modal_rect, 20, 2)
+
+    draw_text(screen, "✦ " + alim['name'].upper() + " ✦", font_small, alim['color'],
+              WIDTH//2, my + 26, align="center")
+
+    draw_text(screen, q['q'], font_medium, CREAM,
+              WIDTH//2, my + 72, align="center", max_width=640)
+
+    labels   = ['1', '2', '3', '4']
+    opt_w, opt_h = 310, 52
+    start_x  = mx + 44
+    start_y  = my + 210
+
+    hx, hy = pygame.mouse.get_pos()
     for i, opt in enumerate(q['opts']):
-        ox = start_x + (i % 2) * (opt_w + 20)
-        oy = start_y + (i // 2) * (opt_h + 20)
-        
+        ox = start_x + (i % 2) * (opt_w + 18)
+        oy = start_y + (i // 2) * (opt_h + 14)
         btn_rect = pygame.Rect(ox, oy, opt_w, opt_h)
-        draw_rounded_rect(screen, (30, 40, 50), btn_rect, 10)
-        draw_rounded_rect(screen, (80, 90, 100), btn_rect, 10, 1)
-        
-        pygame.draw.circle(screen, GOLD_DIM, (ox + 25, oy + 25), 15)
-        draw_text(screen, labels[i], font_small, BG_COLOR, ox + 25, oy + 15, align="center")
-        draw_text(screen, opt, font_tiny, WHITE, ox + 50, oy + 17)
-        
-        hx, hy = pygame.mouse.get_pos()
-        if btn_rect.collidepoint(hx, hy):
-            draw_rounded_rect(screen, GOLD_DIM, btn_rect, 10, 2)
-            
-    draw_text(screen, "Klavye: 1 · 2 · 3 · 4 veya Fare Rengi", font_tiny, MUTED, WIDTH//2, my + modal_h - 30, align="center")
+        hovered  = btn_rect.collidepoint(hx, hy)
+
+        draw_rounded_rect(screen, (40, 52, 64) if hovered else (28, 36, 48), btn_rect, 10)
+        draw_rounded_rect(screen, alim['color'] if hovered else (70, 80, 95), btn_rect, 10, 1)
+
+        pygame.draw.circle(screen, GOLD_DIM, (ox + 26, oy + 26), 15)
+        draw_text(screen, labels[i], font_small, BG_COLOR, ox + 26, oy + 16, align="center")
+        draw_text(screen, opt, font_tiny, WHITE, ox + 48, oy + 18)
+
+    draw_text(screen, "Klavye: 1 · 2 · 3 · 4 veya Tıkla", font_tiny, MUTED,
+              WIDTH//2, my + modal_h - 28, align="center")
 
 def draw_result():
     draw_overlay_bg()
-    
-    modal_w = 500
-    modal_h = 300
+
+    modal_w, modal_h = 520, 310
     mx = (WIDTH - modal_w) // 2
     my = (HEIGHT - modal_h) // 2
-    
+
     modal_rect = pygame.Rect(mx, my, modal_w, modal_h)
     draw_rounded_rect(screen, PANEL_COLOR, modal_rect, 20)
     draw_rounded_rect(screen, GREEN if state.result_correct else RED, modal_rect, 20, 2)
-    
+
     if state.result_correct:
-        draw_text(screen, "✅", font_large, WHITE, WIDTH//2, my + 40, align="center")
-        draw_text(screen, "Doğru!", font_large, GREEN, WIDTH//2, my + 100, align="center")
-        draw_text(screen, "+10 Puan Kazandınız", font_medium, MUTED, WIDTH//2, my + 150, align="center")
-        next_city = ROUTE_NAMES[state.pos]
-        draw_text(screen, f"📍 Şimdi Mola: {next_city}", font_small, TEAL_LIGHT, WIDTH//2, my + 190, align="center")
+        draw_text(screen, "✅", font_large, WHITE, WIDTH//2, my + 36, align="center")
+        draw_text(screen, "Doğru!", font_large, GREEN, WIDTH//2, my + 90, align="center")
+        draw_text(screen, "+10 Puan!", font_medium, MUTED, WIDTH//2, my + 140, align="center")
+        # hint about city progress
+        remaining = state.needed_to_advance - state.questions_in_city
+        if remaining > 0:
+            draw_text(screen, f"Sonraki şehir için {remaining} doğru cevap daha!", font_small, TEAL_LIGHT,
+                      WIDTH//2, my + 180, align="center")
+        else:
+            draw_text(screen, f"Harika! Bir sonraki şehre geçiyorsunuz!", font_small, GOLD,
+                      WIDTH//2, my + 180, align="center")
     else:
-        draw_text(screen, "❌", font_large, WHITE, WIDTH//2, my + 40, align="center")
-        draw_text(screen, "Maalesef, yanlış!", font_large, RED, WIDTH//2, my + 100, align="center")
+        draw_text(screen, "❌", font_large, WHITE, WIDTH//2, my + 36, align="center")
+        draw_text(screen, "Yanlış!", font_large, RED, WIDTH//2, my + 90, align="center")
         corr = state.current_q['opts'][state.current_q['ans']]
-        draw_text(screen, "Doğru Cevap:", font_small, MUTED, WIDTH//2, my + 150, align="center")
-        draw_text(screen, corr, font_medium, CREAM, WIDTH//2, my + 180, align="center")
-        
-    draw_text(screen, "Devam etmek için BOŞLUK (SPACE)", font_tiny, MUTED, WIDTH//2, my + 260, align="center")
+        draw_text(screen, "Doğru Cevap:", font_small, MUTED, WIDTH//2, my + 140, align="center")
+        draw_text(screen, corr, font_medium, CREAM, WIDTH//2, my + 170, align="center", max_width=480)
+
+    draw_text(screen, "Devam için BOŞLUK (SPACE) veya Tıkla", font_tiny, MUTED,
+              WIDTH//2, my + modal_h - 28, align="center")
+
+def draw_travel_screen():
+    screen.blit(map_image, (SIDEBAR_W, 0))
+    overlay = pygame.Surface((MAP_W, MAP_H), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 80))
+    screen.blit(overlay, (SIDEBAR_W, 0))
+
+    # Draw all city dots dimly
+    for i, (cx, cy) in enumerate(ROUTE_COORDS):
+        cx += SIDEBAR_W
+        alim = ALIMLER[ROUTE_ALIM[i]]
+        pygame.draw.circle(screen, alim['color'], (cx, cy), 8)
+        name_surf = font_tiny.render(ROUTE_NAMES[i], True, CREAM)
+        screen.blit(name_surf, (cx - name_surf.get_width()//2, cy - 22))
+
+    state.travel.draw(screen)
+
+    # Sidebar still visible
+    pygame.draw.rect(screen, PANEL_COLOR, (0, 0, SIDEBAR_W, HEIGHT))
+    pygame.draw.line(screen, GOLD_DIM, (SIDEBAR_W-1, 0), (SIDEBAR_W-1, HEIGHT), 2)
+    draw_text(screen, "✈ Yolculuk", font_medium, GOLD, SIDEBAR_W//2, 40, align="center")
+
+    from_city = ROUTE_NAMES[state.prev_pos]
+    to_city   = ROUTE_NAMES[state.pos]
+    from_alim = ALIMLER[ROUTE_ALIM[state.prev_pos]]
+    to_alim   = ALIMLER[ROUTE_ALIM[state.pos]]
+
+    py = 100
+    draw_text(screen, "Nereden:", font_small, MUTED, SIDEBAR_W//2, py, align="center")
+    py += 24
+    draw_text(screen, from_city, font_medium, from_alim['color'], SIDEBAR_W//2, py, align="center")
+    py += 32
+    # animated dots
+    t_ms = pygame.time.get_ticks()
+    dots  = "." * (1 + (t_ms // 400) % 3)
+    draw_text(screen, f"↓ {dots}", font_large, GOLD, SIDEBAR_W//2, py, align="center")
+    py += 48
+    draw_text(screen, "Nereye:", font_small, MUTED, SIDEBAR_W//2, py, align="center")
+    py += 24
+    draw_text(screen, to_city, font_medium, to_alim['color'], SIDEBAR_W//2, py, align="center")
+    py += 36
+    draw_text(screen, to_alim['name'], font_small, to_alim['color'], SIDEBAR_W//2, py, align="center")
+    py += 48
+
+    # progress bar for travel
+    bar_rect = pygame.Rect(40, py, SIDEBAR_W-80, 12)
+    draw_rounded_rect(screen, (30, 40, 50), bar_rect, 6)
+    fill_w = int(state.travel.t * (SIDEBAR_W-80))
+    if fill_w > 0:
+        draw_rounded_rect(screen, GOLD, pygame.Rect(40, py, fill_w, 12), 6)
+    py += 36
+    draw_text(screen, f"% {int(state.travel.t*100)}", font_small, MUTED, SIDEBAR_W//2, py, align="center")
 
 def draw_win():
     draw_overlay_bg()
-    
-    modal_w = 600
-    modal_h = 400
+    modal_w, modal_h = 620, 440
     mx = (WIDTH - modal_w) // 2
     my = (HEIGHT - modal_h) // 2
-    
+
     modal_rect = pygame.Rect(mx, my, modal_w, modal_h)
     draw_rounded_rect(screen, PANEL_COLOR, modal_rect, 20)
     draw_rounded_rect(screen, GOLD, modal_rect, 20, 2)
-    
-    draw_text(screen, "⭐ 🌙 ⭐", font_large, GOLD, WIDTH//2, my + 40, align="center")
-    draw_text(screen, "Mânevî Yolculuk Tamamlandı!", font_large, GOLD, WIDTH//2, my + 100, align="center")
-    
-    hadisler = [
-        "Nerede olursanız olun, Allah sizinle beraberdir. — Hadid 57/4",
-        "Kalpler, ancak Allah'ın zikri ile huzur bulur. — Ra'd 13/28",
-        "Kolaylaştırın, zorlaştırmayın; müjdeleyin, nefret ettirmeyin. — Hadis-i Şerif"
-    ]
-    idx = (state.score + state.wrong) % len(hadisler)
-    
-    draw_text(screen, hadisler[idx], font_tiny, TEAL_LIGHT, WIDTH//2, my + 160, align="center", max_width=500)
-    
-    draw_text(screen, f"Puan: {state.score}", font_medium, GOLD, mx + 150, my + 230, align="center")
-    draw_text(screen, f"Yanlış: {state.wrong}", font_medium, RED, mx + 300, my + 230, align="center")
-    grade = "🌟 Mükemmel" if state.wrong == 0 else "🥇 İyi" if state.wrong < 5 else "🥈 Orta" if state.wrong < 10 else "🥉 Başlangıç"
-    draw_text(screen, grade, font_medium, CREAM, mx + 450, my + 230, align="center")
-    
-    draw_text(screen, "Yeniden Başlamak için 'R' Tuşuna Basın", font_small, MUTED, WIDTH//2, my + 330, align="center")
 
-clock = pygame.time.Clock()
+    draw_text(screen, "⭐ 🌙 ⭐", font_large, GOLD, WIDTH//2, my + 36, align="center")
+    draw_text(screen, "Mânevî Yolculuk Tamamlandı!", font_large, GOLD, WIDTH//2, my + 96, align="center")
+
+    ayetler = [
+        '"Kalpler ancak Allah\'ın zikriyle huzur bulur." — Ra\'d 13/28',
+        '"Kolaylaştırın, zorlaştırmayın." — Hadis-i Şerif',
+        '"Nerede olursanız olun, Allah sizinle beraberdir." — Hadid 57/4',
+    ]
+    idx = (state.score + state.wrong) % len(ayetler)
+    draw_text(screen, ayetler[idx], font_tiny, TEAL_LIGHT,
+              WIDTH//2, my + 156, align="center", max_width=540)
+
+    draw_text(screen, f"Toplam Puan: {state.score}", font_medium, GOLD, WIDTH//2, my + 230, align="center")
+    draw_text(screen, f"Toplam Yanlış: {state.wrong}", font_medium, RED, WIDTH//2, my + 268, align="center")
+
+    grade = ("🌟 Mükemmel – Tasavvuf Ehli!" if state.wrong == 0
+             else "🥇 Harika!" if state.wrong < 4
+             else "🥈 İyi" if state.wrong < 8
+             else "🥉 Başlangıç Seviyesi")
+    draw_text(screen, grade, font_medium, CREAM, WIDTH//2, my + 310, align="center")
+    draw_text(screen, "Yeniden Başlamak için R tuşuna basın", font_small, MUTED,
+              WIDTH//2, my + 390, align="center")
+
+# ── Main loop ─────────────────────────────────────────────────────────────────
+clock   = pygame.time.Clock()
 running = True
 
 async def main():
@@ -427,13 +642,13 @@ async def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            
+
             elif event.type == pygame.KEYDOWN:
                 if state.phase == 'board':
                     if event.key == pygame.K_SPACE:
                         start_question()
                 elif state.phase == 'question':
-                    if event.key in (pygame.K_1, pygame.K_KP1): answer_question(0)
+                    if   event.key in (pygame.K_1, pygame.K_KP1): answer_question(0)
                     elif event.key in (pygame.K_2, pygame.K_KP2): answer_question(1)
                     elif event.key in (pygame.K_3, pygame.K_KP3): answer_question(2)
                     elif event.key in (pygame.K_4, pygame.K_KP4): answer_question(3)
@@ -443,39 +658,46 @@ async def main():
                 elif state.phase == 'win':
                     if event.key == pygame.K_r:
                         restart_game()
-            
+
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 if state.phase == 'question':
                     hx, hy = event.pos
-                    mx = (WIDTH - 700) // 2
-                    my = (HEIGHT - 400) // 2
-                    opt_w = 300
-                    opt_h = 50
-                    start_x = mx + 40
-                    start_y = my + 200
+                    mx0    = (WIDTH - 720) // 2
+                    my0    = (HEIGHT - 420) // 2
+                    opt_w, opt_h = 310, 52
+                    sx, sy = mx0 + 44, my0 + 210
                     for i in range(4):
-                        ox = start_x + (i % 2) * (opt_w + 20)
-                        oy = start_y + (i // 2) * (opt_h + 20)
+                        ox = sx + (i % 2) * (opt_w + 18)
+                        oy = sy + (i // 2) * (opt_h + 14)
                         if pygame.Rect(ox, oy, opt_w, opt_h).collidepoint(hx, hy):
                             answer_question(i)
                 elif state.phase == 'result':
                     close_result()
 
+        # Travel animation auto-finish
+        if state.phase == 'travel':
+            state.travel.update()
+            if not state.travel.active:
+                if state.pos >= len(ROUTE_NAMES) - 1 and state.questions_in_city >= state.needed_to_advance:
+                    state.phase = 'win'
+                else:
+                    state.phase = 'board'
+
         update_particles()
-
         screen.fill(BG_COLOR)
-        
-        draw_board()
-        
-        if state.phase == 'question':
-            draw_question()
-        elif state.phase == 'result':
-            draw_result()
-        elif state.phase == 'win':
-            draw_win()
-            
-        draw_particles()
 
+        if state.phase == 'travel':
+            draw_travel_screen()
+        else:
+            draw_board()
+            if state.phase == 'question':
+                draw_question()
+            elif state.phase == 'result':
+                draw_result()
+            elif state.phase == 'win':
+                draw_win()
+
+        draw_particles()
         pygame.display.flip()
         await asyncio.sleep(0)
         clock.tick(60)
