@@ -7,7 +7,6 @@
   <style>
     body { font-family: sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
     
-    /* 1. The Wrapper Fix: Ensure it's the base for everything */
     #fullscreen-wrapper {
       position: relative;
       background: #000;
@@ -18,12 +17,11 @@
     }
 
     .frame-box {
-      flex-grow: 1; /* Fills remaining space */
+      flex-grow: 1; 
       width: 100%;
       overflow: hidden;
     }
 
-    /* 2. iOS Fallback Class */
     .ios-fs-fix {
       position: fixed !important;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -36,7 +34,6 @@
       user-select: none;
     }
 
-    /* 3. Positioning Fix: Relative to the wrapper, not the window */
     .action-buttons {
       display: grid;
       grid-template-columns: 65px 65px 65px;
@@ -111,7 +108,6 @@
       }, '*');
     }
 
-    // --- REPAIRED FULLSCREEN LOGIC ---
     fsBtn.addEventListener('click', () => {
       const isFullscreen = document.fullscreenElement || 
                            document.webkitFullscreenElement || 
@@ -123,7 +119,6 @@
           } else if (wrapper.webkitRequestFullscreen) {
               wrapper.webkitRequestFullscreen();
           } else {
-              // iPhone Fallback
               wrapper.classList.add('ios-fs-fix');
           }
       } else {
@@ -136,14 +131,12 @@
       }
     });
 
-    // Listen for Escape key or system exit
     document.addEventListener('fullscreenchange', () => {
         if (!document.fullscreenElement) {
             wrapper.classList.remove('ios-fs-fix');
         }
     });
 
-    // --- REPAIRED TOUCH LOGIC ---
     document.querySelectorAll('.control-btn').forEach(btn => {
       const id = btn.id;
       if (id === 'key-fs') return; // Don't send keystrokes for FS button
