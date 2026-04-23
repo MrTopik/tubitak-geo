@@ -57,7 +57,7 @@
       <div style="display:flex;flex-direction:column;align-items:center;gap:6px;align-self:center;">
         <div class="action-buttons" style="position: fixed; right: 0px; bottom: 0px; opacity: 0.5;">
           <button class="btn-action btn-spc control-btn" id="key-space4" title="Soru / Devam">Devam</button>
-          <button class="btn-action btn-5   control-btn" id="key-fs" title="Tam Ekran" onclick="openFullscreen()">Tam Ekran</button>
+          <button class="btn-action btn-5   control-btn" id="key-fs" title="Tam Ekran">Tam Ekran</button>
           <button class="btn-action btn-1   control-btn" id="key-1" title="Şık 1">1</button>
           <button class="btn-action btn-2   control-btn" id="key-2" title="Şık 4">2</button>
           <button class="btn-action btn-3   control-btn" id="key-3" title="Şık 2">3</button>
@@ -84,6 +84,7 @@
 
     const frame = document.getElementById('game-frame');
     const wrapper = document.getElementById('fullscreen-wrapper');
+    const fsBtn = document.getElementById('key-fs')
 
     function sendKey(btnId, eventType) {
       const m = keyMap[btnId];
@@ -100,15 +101,23 @@
     // Show touch controls on touch-capable devices
     document.getElementById('touch-controls').style.display = 'flex';
 
-    function openFullscreen() {
-      if (wrapper.requestFullscreen) {
-        wrapper.requestFullscreen();
-      } else if (wrapper.webkitRequestFullscreen) { /* Safari */
-        wrapper.webkitRequestFullscreen();
-      } else if (wrapper.msRequestFullscreen) { /* IE11 */
-        wrapper.msRequestFullscreen();
+    fsBtn.addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+          // ENTER Fullscreen
+          if (wrapper.requestFullscreen) {
+              wrapper.requestFullscreen();
+          } else if (wrapper.webkitRequestFullscreen) { /* iOS/Safari */
+              wrapper.webkitRequestFullscreen();
+          }
+      } else {
+          // EXIT Fullscreen
+          if (document.exitFullscreen) {
+              document.exitFullscreen();
+          } else if (document.webkitExitFullscreen) { /* iOS/Safari */
+              document.webkitExitFullscreen();
+          }
       }
-    }
+  });
     
     document.querySelectorAll('.control-btn').forEach(btn => {
       const id = btn.id;
