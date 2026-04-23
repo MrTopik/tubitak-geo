@@ -5,45 +5,65 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Oyun</title>
   <style>
-    body { font-family: sans-serif; background-color: #f4f4f4; margin: 0; padding: 10px; }
+    body { font-family: sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
+    
+    /* 1. The Wrapper Fix: Ensure it's the base for everything */
+    #fullscreen-wrapper {
+      position: relative;
+      background: #000;
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
     .frame-box {
-      width: 100%; max-width: 2000px; height: 100vh; min-height: 500px;
-      border: 4px solid #333; border-radius: 8px; overflow: hidden;
-      background: #000; margin: 0 auto;
+      flex-grow: 1; /* Fills remaining space */
+      width: 100%;
+      overflow: hidden;
     }
+
+    /* 2. iOS Fallback Class */
+    .ios-fs-fix {
+      position: fixed !important;
+      top: 0; left: 0; right: 0; bottom: 0;
+      z-index: 99999;
+      height: 100vh !important;
+    }
+
     #touch-controls {
-      display: none; justify-content: space-between;
-      max-width: 800px; margin: 20px auto; padding: 0 20px; user-select: none;
+      display: flex;
+      user-select: none;
     }
-    .btn-dir {
-      background-color: #444; color: #fff; border: none;
-      border-radius: 8px; font-size: 24px; touch-action: none; cursor: pointer;
-    }
-    .btn-dir:active, .btn-dir.active-btn { background-color: #777; }
-    .up    { grid-column: 2; grid-row: 1; border-radius: 8px 8px 0 0; }
-    .left  { grid-column: 1; grid-row: 2; border-radius: 8px 0 0 8px; }
-    .right { grid-column: 3; grid-row: 2; border-radius: 0 8px 8px 0; }
-    .down  { grid-column: 2; grid-row: 3; border-radius: 0 0 8px 8px; }
-    .center-pad { grid-column: 2; grid-row: 2; background-color: #444; }
+
+    /* 3. Positioning Fix: Relative to the wrapper, not the window */
     .action-buttons {
-      display: grid; grid-template-columns: 65px 65px 65px;
-      grid-template-rows: 65px 65px 65px; gap: 5px;
+      display: grid;
+      grid-template-columns: 65px 65px 65px;
+      grid-template-rows: 65px 65px 65px;
+      gap: 5px;
+      position: absolute; /* Changed from fixed */
+      right: 10px;
+      bottom: 10px;
+      opacity: 0.7;
+      z-index: 100;
     }
+
     .btn-action {
       border: none; border-radius: 50%; font-size: 22px; font-weight: bold;
-      color: #fff; box-shadow: 0 6px 0 #222; touch-action: none;
-      transition: transform 0.05s, box-shadow 0.05s; cursor: pointer;
+      color: #fff; box-shadow: 0 4px 0 #222; touch-action: none;
+      transition: transform 0.05s; cursor: pointer;
     }
-    .btn-action:active, .btn-action.active-btn {
-      transform: translateY(6px); box-shadow: 0 0px 0 #222;
-    }
-    .btn-spc { grid-column: 2; grid-row: 1; background-color: #007bff; font-size: 12px; }
-    .btn-5   { grid-column: 3; grid-row: 1; background-color: aqua; color: #000; font-size: 12px;}
+    .btn-action:active { transform: translateY(4px); box-shadow: 0 0px 0 #222; }
+
+    .btn-spc { grid-column: 2; grid-row: 1; background-color: #007bff; font-size: 10px; }
+    .btn-5   { grid-column: 3; grid-row: 1; background-color: aqua; color: #000; font-size: 10px;}
     .btn-1   { grid-column: 1; grid-row: 2; background-color: #28a745; }
     .btn-2   { grid-column: 2; grid-row: 2; background-color: #dc3545; }
     .btn-3   { grid-column: 3; grid-row: 2; background-color: #ffc107; color: #333; }
     .btn-4   { grid-column: 2; grid-row: 3; background-color: #6f42c1; }
-    .hint-text { text-align: center; color: #555; font-size: 13px; margin-top: 8px; }
+
+    .hint-text { text-align: center; color: #555; font-size: 13px; padding: 10px; }
   </style>
 </head>
 <body>
@@ -54,28 +74,22 @@
     </div>
 
     <div id="touch-controls">
-      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;align-self:center;">
-        <div class="action-buttons" style="position: fixed; right: 0px; bottom: 0px; opacity: 0.5;">
-          <button class="btn-action btn-spc control-btn" id="key-space4" title="Soru / Devam">Devam</button>
-          <button class="btn-action btn-5   control-btn" id="key-fs" title="Tam Ekran">Tam Ekran</button>
-          <button class="btn-action btn-1   control-btn" id="key-1" title="Şık 1">1</button>
-          <button class="btn-action btn-2   control-btn" id="key-2" title="Şık 4">2</button>
-          <button class="btn-action btn-3   control-btn" id="key-3" title="Şık 2">3</button>
-          <button class="btn-action btn-4   control-btn" id="key-4" title="Şık 3">4</button>
+        <div class="action-buttons">
+          <button class="btn-action btn-spc control-btn" id="key-space4">Devam</button>
+          <button class="btn-action btn-5 control-btn" id="key-fs">Tam Ekran</button>
+          <button class="btn-action btn-1 control-btn" id="key-1">1</button>
+          <button class="btn-action btn-2 control-btn" id="key-2">2</button>
+          <button class="btn-action btn-3 control-btn" id="key-3">3</button>
+          <button class="btn-action btn-4 control-btn" id="key-4">4</button>
         </div>
-      </div>
     </div>
   </div>
 
-  <p class="hint-text" id="hint-desktop">
-    Klavye: <b>SPACE</b> = Soru al &nbsp;|&nbsp; <b>1 2 3 4</b> = Cevapla &nbsp; Sorun yaşıyorsanız pencereyi oynatın<b>
-  </p>
+  <p class="hint-text">Klavye: SPACE | 1 2 3 4</p>
 
   <script>
-    // Key mapping: button ID → KeyboardEvent fields
     const keyMap = {
       'key-space4': { key: ' ', code: 'Space'  },
-      'key-r':      { key: 'r', code: 'KeyR'   },
       'key-1':      { key: '1', code: 'Digit1' },
       'key-2':      { key: '2', code: 'Digit2' },
       'key-3':      { key: '3', code: 'Digit3' },
@@ -84,81 +98,68 @@
 
     const frame = document.getElementById('game-frame');
     const wrapper = document.getElementById('fullscreen-wrapper');
-    const fsBtn = document.getElementById('key-fs')
+    const fsBtn = document.getElementById('key-fs');
 
     function sendKey(btnId, eventType) {
       const m = keyMap[btnId];
       if (!m) return;
-      // This matches exactly what game.html's message listener expects
       frame.contentWindow.postMessage({
         keyboardSim: true,
-        type: eventType,   // 'keydown' or 'keyup'
+        type: eventType,
         key: m.key,
         code: m.code
       }, '*');
     }
 
-    // Show touch controls on touch-capable devices
-    document.getElementById('touch-controls').style.display = 'flex';
-
+    // --- REPAIRED FULLSCREEN LOGIC ---
     fsBtn.addEventListener('click', () => {
-      if (!document.fullscreenElement) {
-          // ENTER Fullscreen
+      const isFullscreen = document.fullscreenElement || 
+                           document.webkitFullscreenElement || 
+                           wrapper.classList.contains('ios-fs-fix');
+
+      if (!isFullscreen) {
           if (wrapper.requestFullscreen) {
               wrapper.requestFullscreen();
-          } else if (wrapper.webkitRequestFullscreen) { /* iOS/Safari */
+          } else if (wrapper.webkitRequestFullscreen) {
               wrapper.webkitRequestFullscreen();
+          } else {
+              // iPhone Fallback
+              wrapper.classList.add('ios-fs-fix');
           }
       } else {
-          // EXIT Fullscreen
           if (document.exitFullscreen) {
               document.exitFullscreen();
-          } else if (document.webkitExitFullscreen) { /* iOS/Safari */
+          } else if (document.webkitExitFullscreen) {
               document.webkitExitFullscreen();
           }
+          wrapper.classList.remove('ios-fs-fix');
       }
-  });
-    
+    });
+
+    // Listen for Escape key or system exit
+    document.addEventListener('fullscreenchange', () => {
+        if (!document.fullscreenElement) {
+            wrapper.classList.remove('ios-fs-fix');
+        }
+    });
+
+    // --- REPAIRED TOUCH LOGIC ---
     document.querySelectorAll('.control-btn').forEach(btn => {
       const id = btn.id;
+      if (id === 'key-fs') return; // Don't send keystrokes for FS button
 
-      btn.addEventListener('touchstart', e => {
+      // Use pointer events for better cross-platform support
+      btn.addEventListener('pointerdown', (e) => {
         e.preventDefault();
-        btn.classList.add('active-btn');
-        sendKey(id, 'keydown');
-      }, { passive: false });
-
-      btn.addEventListener('touchend', e => {
-        e.preventDefault();
-        btn.classList.remove('active-btn');
-        sendKey(id, 'keyup');
-      }, { passive: false });
-
-      btn.addEventListener('mousedown', () => {
-        btn.classList.add('active-btn');
         sendKey(id, 'keydown');
       });
 
-      btn.addEventListener('mouseup', () => {
-        btn.classList.remove('active-btn');
+      btn.addEventListener('pointerup', (e) => {
+        e.preventDefault();
         sendKey(id, 'keyup');
       });
-
-      btn.addEventListener('mouseleave', () => {
-        btn.classList.remove('active-btn');
-        sendKey(id, 'keyup');
-      });
-    });
-    frame.addEventListener('load', () => {
-      setTimeout(() => {
-        frame.style.width = '99.9%';
-        requestAnimationFrame(() => {
-          frame.style.width = '100%';
-          try {
-            frame.contentWindow.dispatchEvent(new Event('resize'));
-          } catch(e) {}
-        });
-      }, 500);
+      
+      btn.addEventListener('pointerleave', () => sendKey(id, 'keyup'));
     });
   </script>
 </body>
