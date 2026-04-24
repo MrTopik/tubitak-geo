@@ -1,0 +1,14 @@
+{
+  "background_color": "#b5b5b5",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "geo-game",
+  "orientation": "landscape-primary",
+  "scope": "/game.html",
+  "short_name": "geo-game",
+  "start_url": "/index.html",
+  "theme_color": "#ffd9d9",
+  "id": "geo-game",
+  "description": "Geography game",
+  "lang": "tr"
+}
