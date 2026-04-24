@@ -27,15 +27,15 @@ PURPLE      = (167, 139, 250)
 ORANGE      = (251, 146, 60)
 
 try:
-    font_large  = pygame.font.SysFont("georgia", 30, bold=True)
-    font_medium = pygame.font.SysFont("georgia", 22)
-    font_small  = pygame.font.SysFont("georgia", 17)
-    font_tiny   = pygame.font.SysFont("georgia", 13)
+    font_large  = pygame.font.SysFont("georgia", 36, bold=True)
+    font_medium = pygame.font.SysFont("georgia", 29)
+    font_small  = pygame.font.SysFont("georgia", 24)
+    font_tiny   = pygame.font.SysFont("georgia", 20)
 except:
-    font_large  = pygame.font.Font(None, 38)
-    font_medium = pygame.font.Font(None, 28)
-    font_small  = pygame.font.Font(None, 22)
-    font_tiny   = pygame.font.Font(None, 17)
+    font_large  = pygame.font.Font(None, 40)
+    font_medium = pygame.font.Font(None, 34)
+    font_small  = pygame.font.Font(None, 30)
+    font_tiny   = pygame.font.Font(None, 25)
 
 try:
     map_image = pygame.image.load("Images/turkiye-haritasi.png")
@@ -62,7 +62,7 @@ ALIMLER = [
     {'name': 'Akşemseddin',  'city': 'İstanbul',  'color': (251, 146, 60)},
     {'name': 'Yunus Emre',   'city': 'Eskişehir', 'color': (78, 205, 196)},
     {'name': 'Mevlânâ Rûmî', 'city': 'Konya',     'color': (232, 168, 56)},
-    {'name': 'Hacı Bektaş',  'city': 'Nevşehir',  'color': (167, 139, 250)},
+    {'name': 'Hacı Bektaş-ı Veli',  'city': 'Nevşehir',  'color': (167, 139, 250)},
 ]
 
 ROUTE_NAMES  = ['İstanbul', 'Eskişehir', 'Konya', 'Nevşehir']
@@ -98,7 +98,7 @@ QUESTIONS = [
      'opts': ['Arapça eserler yazması', 'Halk dilinde sade Türkçe ile şiir yazması',
                'Medrese ilmiyle tanınması', 'Yalnızca dinî kitap yazması'], 'ans': 1},
     {'alim': 1, 'q': 'Yunus Emre hangi alimin dergahında yetişmiştir?',
-     'opts': ['Mevlânâ Rûmî', 'Hacı Bektaş', 'Tapduk Emre', 'Akşemseddin'], 'ans': 2},
+     'opts': ['Mevlânâ Rûmî', 'Hacı Bektaş-ı Veli', 'Tapduk Emre', 'Akşemseddin'], 'ans': 2},
     {'alim': 1, 'q': 'Yunus Emre\'nin şiirlerinde en çok işlediği konu nedir?',
      'opts': ['Savaş ve kahramanlık', 'Sevgi, hoşgörü ve Allah aşkı', 'Fıkıh kuralları', 'Astronomi'], 'ans': 1},
     {'alim': 1, 'q': 'Yunus Emre hangi edebi türde eser vermiştir?',
@@ -123,7 +123,7 @@ QUESTIONS = [
     {'alim': 2, 'q': 'Mevlânâ\'nın düşünce sisteminin temelinde hangi kavram vardır?',
      'opts': ['Güç', 'Sevgi', 'Bilgi', 'Korku'], 'ans': 1},
     {'alim': 2, 'q': 'Mevlânâ\'nın hayatını değiştiren kişi kimdir?',
-     'opts': ['Hacı Bektaş', 'Sultan Veled', 'Şems-i Tebrîzî', 'Ateşbaz-ı Velî'], 'ans': 2},
+     'opts': ['Hacı Bektaş-ı Veli', 'Sultan Veled', 'Şems-i Tebrîzî', 'Ateşbaz-ı Velî'], 'ans': 2},
     {'alim': 2, 'q': 'Mevlevilikte yapılan dönme hareketine ne ad verilir?',
      'opts': ['Zikir', 'Sema', 'Halvet', 'Murakabe'], 'ans': 1},
     {'alim': 2, 'q': 'Sema neyi simgeler?',
@@ -133,15 +133,15 @@ QUESTIONS = [
      'opts': ['Roma\'da doğması', 'Anadolu\'da yaşaması', 'Rum asıllı olması', 'Rumca bilmesi'], 'ans': 1},
     {'alim': 2, 'q': 'Mevlânâ\'nın ölümüne verdiği özel isim nedir?',
      'opts': ['Şeb-i Arûs', 'Şeb-i Yeldâ', 'Şeb-i Mirac', 'Şeb-i Kadir'], 'ans': 0},
-    # Hacı Bektaş (alim 3)
-    {'alim': 3, 'q': 'Hacı Bektaş-ı Velî\'nin kurucusu kabul edildiği tarikat hangisidir?',
-     'opts': ['Nakşibendilik', 'Mevlevilik', 'Bektaşilik', 'Kadirilik'], 'ans': 2},
-    {'alim': 3, 'q': 'Hacı Bektaş Velî Anadolu\'ya nereden gelmiştir?',
-     'opts': ['Irak', 'İran', 'Horasan', 'Yemen'], 'ans': 2},
-    {'alim': 3, 'q': '"Dört Kapı Kırk Makam" öğretisinde ilk kapı hangisidir?',
-     'opts': ['Tarikat', 'Marifet', 'Şeriat', 'Hakikat'], 'ans': 2},
-    {'alim': 3, 'q': 'Hacı Bektaş Velî\'nin türbesi hangi ilde bulunmaktadır?',
-     'opts': ['Konya', 'Nevşehir', 'Kırşehir', 'Sivas'], 'ans': 1},
+    # Hacı Bektaş-ı Veli (alim 3)
+    {'alim': 3, 'q': 'Hacı Bektaş-ı Veli nerede doğmuştur?',
+     'opts': ['Nişabur', 'Merv', 'Nevşehir', 'İstanbul'], 'ans': 0},
+    {'alim': 3, 'q': 'Hacı Bektaş-ı Veli Osmanlı ordusunuda özellikle hangi askeri grup tarafından benimsenmiştir?',
+     'opts': ['Lağımcılar', 'Akıncılar', 'Topçular', 'Yeniçeriler'], 'ans': 3},
+    {'alim': 3, 'q': 'Hacı Bektaş-ı Veli ilk öğrenimini kimden almıştır?',
+     'opts': ['Abdal Musa', 'Hoca İlyas', 'Lokman Perende', 'Hoca Ahmet Yesevi'], 'ans': 2},
+    {'alim': 3, 'q': 'Hacı Bektaş-ı Veli günümüzde hangi ilimizde popülerdir?',
+     'opts': ['İstanbul', 'Nevşehir', 'Mardin', 'Sivas'], 'ans': 1},
 ]
 
 # ── Travel animation with YHT train ──────────────────────────────────────────
@@ -266,7 +266,7 @@ class TravelAnim:
             surface.blit(s, (int(star[0]) - sr, int(star[1]) - sr))
 
         # ── Label ──
-        label = font_tiny.render("YHT Yolculuğu...", True, GOLD)
+        label = font_tiny.render("Yolculuk", True, GOLD)
         surface.blit(label, (cx + 20, cy - 22))
 
 
@@ -459,12 +459,12 @@ def draw_board():
     pygame.draw.rect(screen, PANEL_COLOR, (0, 0, SIDEBAR_W, HEIGHT))
     pygame.draw.line(screen, GOLD_DIM, (SIDEBAR_W-1, 0), (SIDEBAR_W-1, HEIGHT), 2)
 
-    draw_text(screen, "🕌 Tasavvuf Ehli Bilgi", font_medium, GOLD, SIDEBAR_W//2, 28, align="center")
+    draw_text(screen, "Tasavvuf Ehli Bilgi", font_medium, GOLD, SIDEBAR_W//2, 28, align="center")
     draw_text(screen, "Türkiye'nin Şehirleri", font_small, MUTED, SIDEBAR_W//2, 56, align="center")
     pygame.draw.line(screen, GOLD_DIM, (20, 84), (SIDEBAR_W-20, 84), 1)
 
     py = 98
-    draw_text(screen, "✦ İlerleme ✦", font_small, GOLD, SIDEBAR_W//2, py, align="center")
+    draw_text(screen, "İlerleme", font_small, GOLD, SIDEBAR_W//2, py, align="center")
     py += 32
     current_alim = ALIMLER[ROUTE_ALIM[state.pos]]
     draw_text(screen, "Alim:", font_small, MUTED, 30, py)
@@ -500,7 +500,7 @@ def draw_board():
 
     pygame.draw.line(screen, GOLD_DIM, (20, py), (SIDEBAR_W-20, py), 1)
     py += 14
-    draw_text(screen, "🚄 Yolculuk Haritası", font_small, GOLD, SIDEBAR_W//2, py, align="center")
+    draw_text(screen, "Yolculuk Haritası", font_small, GOLD, SIDEBAR_W//2, py, align="center")
     py += 26
 
     for i, (rname, alim_i) in enumerate(zip(ROUTE_NAMES, ROUTE_ALIM)):
@@ -537,12 +537,12 @@ def draw_question():
     modal_rect = pygame.Rect(mx, my, modal_w, modal_h)
     draw_rounded_rect(screen, PANEL_COLOR, modal_rect, 20)
     draw_rounded_rect(screen, alim['color'], modal_rect, 20, 2)
-    draw_text(screen, "✦ " + alim['name'].upper() + " ✦", font_small, alim['color'],
+    draw_text(screen, alim['name'].upper(), font_small, alim['color'],
               WIDTH//2, my + 26, align="center")
     draw_text(screen, q['q'], font_medium, CREAM,
               WIDTH//2, my + 72, align="center", max_width=640)
 
-    labels  = ['1', '2', '3', '4']
+    labels  = ['\n1', '\n2', '\n3', '\n4']
     opt_w, opt_h = 310, 52
     start_x = mx + 44
     start_y = my + 210
@@ -558,7 +558,7 @@ def draw_question():
         draw_text(screen, labels[i], font_small, BG_COLOR, ox + 26, oy + 16, align="center")
         draw_text(screen, opt, font_tiny, WHITE, ox + 48, oy + 18)
 
-    draw_text(screen, "Klavye: 1 · 2 · 3 · 4 veya Tıkla", font_tiny, MUTED,
+    draw_text(screen, "Klavye: 1 · 2 · 3 · 4", font_tiny, MUTED,
               WIDTH//2, my + modal_h - 28, align="center")
 
 def draw_result():
@@ -571,7 +571,6 @@ def draw_result():
     draw_rounded_rect(screen, GREEN if state.result_correct else RED, modal_rect, 20, 2)
 
     if state.result_correct:
-        draw_text(screen, "✅", font_large, WHITE, WIDTH//2, my + 36, align="center")
         draw_text(screen, "Doğru!", font_large, GREEN, WIDTH//2, my + 90, align="center")
         draw_text(screen, "+10 Puan!", font_medium, MUTED, WIDTH//2, my + 140, align="center")
         remaining = state.needed_to_advance - state.questions_in_city
@@ -582,7 +581,6 @@ def draw_result():
             draw_text(screen, "Harika! Bir sonraki şehre geçiyorsunuz!", font_small, GOLD,
                       WIDTH//2, my + 180, align="center")
     else:
-        draw_text(screen, "❌", font_large, WHITE, WIDTH//2, my + 36, align="center")
         draw_text(screen, "Yanlış!", font_large, RED, WIDTH//2, my + 90, align="center")
         corr = state.current_q['opts'][state.current_q['ans']]
         draw_text(screen, "Doğru Cevap:", font_small, MUTED, WIDTH//2, my + 140, align="center")
@@ -608,7 +606,7 @@ def draw_travel_screen():
 
     pygame.draw.rect(screen, PANEL_COLOR, (0, 0, SIDEBAR_W, HEIGHT))
     pygame.draw.line(screen, GOLD_DIM, (SIDEBAR_W-1, 0), (SIDEBAR_W-1, HEIGHT), 2)
-    draw_text(screen, "🚄 YHT Yolculuğu", font_medium, GOLD, SIDEBAR_W//2, 40, align="center")
+    draw_text(screen, "Yolculuk", font_medium, GOLD, SIDEBAR_W//2, 40, align="center")
 
     from_city = ROUTE_NAMES[state.prev_pos]
     to_city   = ROUTE_NAMES[state.pos]
@@ -648,7 +646,6 @@ def draw_win():
     draw_rounded_rect(screen, PANEL_COLOR, modal_rect, 20)
     draw_rounded_rect(screen, GOLD, modal_rect, 20, 2)
 
-    draw_text(screen, "⭐ 🌙 ⭐", font_large, GOLD, WIDTH//2, my + 36, align="center")
     draw_text(screen, "Mânevî Yolculuk Tamamlandı!", font_large, GOLD, WIDTH//2, my + 96, align="center")
 
     ayetler = [
@@ -663,10 +660,10 @@ def draw_win():
     draw_text(screen, f"Toplam Puan: {state.score}", font_medium, GOLD, WIDTH//2, my + 230, align="center")
     draw_text(screen, f"Toplam Yanlış: {state.wrong}", font_medium, RED, WIDTH//2, my + 268, align="center")
 
-    grade = ("🌟 Mükemmel – Tasavvuf Ehli!" if state.wrong == 0
-             else "🥇 Harika!" if state.wrong < 4
-             else "🥈 İyi" if state.wrong < 8
-             else "🥉 Başlangıç Seviyesi")
+    grade = ("Mükemmel – Tasavvuf Ehli!" if state.wrong == 0
+             else "Harika!" if state.wrong < 4
+             else "İyi" if state.wrong < 8
+             else "Başlangıç Seviyesi")
     draw_text(screen, grade, font_medium, CREAM, WIDTH//2, my + 310, align="center")
     draw_text(screen, "Yeniden Başlamak için R tuşuna basın", font_small, MUTED,
               WIDTH//2, my + 390, align="center")
@@ -739,5 +736,6 @@ async def main():
         pygame.display.flip()
         await asyncio.sleep(0)
         clock.tick(60)
+
 
 asyncio.run(main())
