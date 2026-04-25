@@ -38,7 +38,7 @@ except:
     font_tiny   = pygame.font.Font(None, 25)
 
 try:
-    map_image = pygame.image.load("Images/turkiye-haritasi.png")
+    map_image = pygame.image.load("Images/yeni_harita.jpeg")
     map_image = pygame.transform.smoothscale(map_image, (MAP_W, MAP_H))
 except:
     map_image = pygame.Surface((MAP_W, MAP_H))
